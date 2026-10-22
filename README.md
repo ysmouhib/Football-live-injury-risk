@@ -17,7 +17,7 @@ Version 0.1.0: specification complete, core tested.
 | Markov chain tools | `livrisk.markov` | done, tested |
 | Data contracts | `livrisk.contracts` | done, tested |
 | User-facing wording | `livrisk.app.wording` | done, tested |
-| M1 configuration | `livrisk.config` | planned |
+| M1 configuration | `livrisk.config` | done |
 | M2 synthetic data | `livrisk.synth` | planned |
 | M3 stream features | `livrisk.features.stream` | planned |
 | M4 player and team norms | `livrisk.features.norms` | planned |

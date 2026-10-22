@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Typed, validated configuration loading with a stable config hash (M1).
+
 ## 0.1.0 - 2026-10-22
 
 - Specification (docs 00-07) and design decisions D-001 to D-008.
