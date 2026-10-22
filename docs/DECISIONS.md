@@ -128,3 +128,16 @@ only affects the cosmetic `period` label during stoppage.
 Consequences: the no-look-ahead rule is a plain comparison on `u`; the ambiguity at the break is
 documented in docs/03 §7.
 
+## D-017: Reset state reaches the norm table at build time (2026-10-22, M4)
+Context: the norm reset rule (docs/02_MATH.md §3) needs per-player inputs the history frame does
+not carry: `days_since_return` and `days_since_last_match` come from the weekly input
+(PreMatchRisk fields, docs/03 §5), and `matches_since_return` is a count the caller maintains.
+Options: derive the reset state inside `build_norms` from the history dates; pass a per-player
+mapping to `build_norms`; pass it per query to `NormTable.get` / `z_for`.
+Choice: an optional `reset_inputs` mapping of `ResetInputs` on `build_norms`. The built
+`NormTable` is then self-contained: `get` and `z_for` need no extra arguments, and the
+position-norm fallback of a player in reset still carries `reset=True`, so the quality reason
+`norm_reset` reaches the snapshot whatever his history holds.
+Consequences: `build_norms` grows one optional parameter; deriving the state from history was
+rejected because a windowed history cannot see the absence or matches outside the frame.
+

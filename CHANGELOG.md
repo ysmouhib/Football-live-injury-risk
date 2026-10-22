@@ -7,6 +7,7 @@
   informative substitution censoring; full-match path with a band-dependent semi-Markov speed
   process, tracking, events, lineups, pre-match risks and injury labels (M2).
 - Stream feature engine with quality flags (M3).
+- Player, position and team norms with recency weighting, shrinkage and a reset rule (M4).
 
 ## 0.1.0 - 2026-10-22
 
