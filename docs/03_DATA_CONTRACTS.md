@@ -97,6 +97,10 @@ form; consume the file, do not copy its code.
 prematch_only, stale), `quality_reasons: tuple[str, ...]` (codes of `app.wording.QUALITY_REASON_TEXT`:
 low_coverage, identity_low, norm_reset, few_matches, clock_drift).
 
+In snapshots, `as_of_t_s` and `cutoff_t_s` carry the **play clock** (seconds of play since
+kick-off, period breaks removed), because the raw match clock is ambiguous across a break; the
+mapping comes from `period_end` events. See `docs/DECISIONS.md` D-016.
+
 ### `RiskSnapshot` (every 60 s, per player on the pitch)
 `match_id, player_id, period, as_of_t_s, data_age_s, quality, mode (risk | monitor_only),
 p15, p15_lo, p15_hi, r_rest, r_rest_lo, r_rest_hi, r_usual, rr, prematch_band (low | watch | high),

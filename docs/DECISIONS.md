@@ -115,3 +115,16 @@ Choice: train on historical and shadow-mode matches; live-mode matches only with
 censored at their first shown alert; report the censored minutes.
 Consequences: every shown alert and staff action must be logged (already required).
 
+## D-016: Feature engine works on a play clock (2026-10-22, M3)
+Context: the match clock `t_s` (docs/03 §1) is ambiguous across a period break: first-half
+stoppage runs past 2700 s, where the second half restarts, so a bare `t_s` does not order samples
+across periods, and the blanking rule (`data <= t - delta`) needs a strictly real-time ordering.
+Options: carry (period, t_s) pairs everywhere; order by arrival time; a derived play clock.
+Choice: `features/stream.py` works on the play clock `u` (seconds of play since kick-off, breaks
+removed; the synthetic generator's internal convention). `as_of_t_s` and `cutoff_t_s` in
+`FeatureSnapshot` carry play-clock seconds; `period` labels the period at `as_of`. Period lengths
+come from `period_end` events seen so far; until one arrives the standard length is assumed, which
+only affects the cosmetic `period` label during stoppage.
+Consequences: the no-look-ahead rule is a plain comparison on `u`; the ambiguity at the break is
+documented in docs/03 §7.
+
