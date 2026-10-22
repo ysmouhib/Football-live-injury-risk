@@ -8,6 +8,7 @@
   process, tracking, events, lineups, pre-match risks and injury labels (M2).
 - Stream feature engine with quality flags (M3).
 - Player, position and team norms with recency weighting, shrinkage and a reset rule (M4).
+- Pre-match bridge: weekly risk CSV to a match baseline hazard, usual-risk bands (M5).
 
 ## 0.1.0 - 2026-10-22
 
