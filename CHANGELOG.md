@@ -6,6 +6,7 @@
 - Synthetic data generator: person-minute fast path with known hazard, AR(1) live state and
   informative substitution censoring; full-match path with a band-dependent semi-Markov speed
   process, tracking, events, lineups, pre-match risks and injury labels (M2).
+- Stream feature engine with quality flags (M3).
 
 ## 0.1.0 - 2026-10-22
 

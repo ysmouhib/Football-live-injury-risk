@@ -19,7 +19,7 @@ Version 0.1.0: specification complete, core tested.
 | User-facing wording | `livrisk.app.wording` | done, tested |
 | M1 configuration | `livrisk.config` | done |
 | M2 synthetic data | `livrisk.synth` | done |
-| M3 stream features | `livrisk.features.stream` | planned |
+| M3 stream features | `livrisk.features.stream` | done |
 | M4 player and team norms | `livrisk.features.norms` | planned |
 | M5 pre-match bridge | `livrisk.model.prematch` | planned |
 | M6 live hazard model | `livrisk.model.live_hazard` | planned |
