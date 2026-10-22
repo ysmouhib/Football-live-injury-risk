@@ -10,6 +10,7 @@
 - Player, position and team norms with recency weighting, shrinkage and a reset rule (M4).
 - Pre-match bridge: weekly risk CSV to a match baseline hazard, usual-risk bands (M5).
 - Live hazard model: MAP fit with Laplace covariance and importance-sampling interval audit (M6).
+- Online risk engine: posterior-draw intervals, quality rules and monitor-only mode (M7).
 
 ## 0.1.0 - 2026-10-22
 

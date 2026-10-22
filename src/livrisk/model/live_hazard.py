@@ -671,6 +671,30 @@ def _battery_max_rel_diff(
     return worst
 
 
+def _psd_eigh(cov: FloatArray) -> tuple[FloatArray, FloatArray]:
+    """Non-zero eigenvalues and eigenvectors of a symmetric PSD matrix.
+
+    The Laplace covariance has exact rank 8 + K (the theta rows satisfy the sum-to-zero
+    constraint of docs/02_MATH.md §4), so a numerical rank tolerance decides which eigenvalues
+    count as non-zero.
+    """
+    vals, vecs = np.linalg.eigh(0.5 * (cov + cov.T))
+    tol = float(vals[-1]) * cov.shape[0] * np.finfo(np.float64).eps
+    keep = vals > max(tol, 0.0)
+    return np.asarray(vals[keep], dtype=np.float64), np.asarray(vecs[:, keep], dtype=np.float64)
+
+
+def laplace_factor(cov: FloatArray) -> FloatArray:
+    """Factor ``factor`` with ``factor @ factor.T == cov``, from the non-zero eigenspace.
+
+    Posterior draws from the Laplace approximation are ``point + z @ factor.T`` with ``z``
+    standard normal. Because the covariance of a ``FittedHazard`` is exactly singular, draws
+    must come from this factor, not from a Cholesky factorisation.
+    """
+    vals, basis = _psd_eigh(cov)
+    return np.asarray(basis * np.sqrt(vals)[None, :], dtype=np.float64)
+
+
 def interval_audit(
     fitted: FittedHazard, design: Design, cfg: IntervalAuditConfig, *, seed: int = 0
 ) -> AuditReport:
@@ -691,10 +715,7 @@ def interval_audit(
         raise ValueError("design and fitted model disagree on the number of features")
     psi = np.asarray(fitted.point, dtype=np.float64)
     cov = np.asarray(fitted.cov, dtype=np.float64)
-    vals, vecs = np.linalg.eigh(0.5 * (cov + cov.T))
-    tol = float(vals[-1]) * cov.shape[0] * np.finfo(np.float64).eps
-    keep = vals > max(tol, 0.0)
-    vals, basis = vals[keep], vecs[:, keep]
+    vals, basis = _psd_eigh(cov)
     rank = int(vals.size)
     factor = basis * np.sqrt(vals)[None, :]
 

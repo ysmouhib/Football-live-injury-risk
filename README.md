@@ -23,7 +23,7 @@ Version 0.1.0: specification complete, core tested.
 | M4 player and team norms | `livrisk.features.norms` | done |
 | M5 pre-match bridge | `livrisk.model.prematch` | done |
 | M6 live hazard model | `livrisk.model.live_hazard` | done |
-| M7 online risk engine | `livrisk.engine` | planned |
+| M7 online risk engine | `livrisk.engine` | done |
 | M8 alerts and operating point | `livrisk.alerts` | planned |
 | M9 replay and log store | `livrisk.replay`, `livrisk.storage` | planned |
 | M10 evaluation, Gate C, sensitivity | `livrisk.evaluation` | planned |

@@ -64,9 +64,10 @@ FEATURE_NAMES: tuple[str, ...] = (
     "disrupt_5m",
 )
 
-#: Tracking-derived features; "no live feature valid" (prematch_only) is judged on these.
-#: disrupt_5m comes from the event feed, not from tracking.
-_TRACKING_FEATURES: tuple[str, ...] = (
+#: Tracking-derived features; "no live feature valid" (prematch_only) is judged on these, and
+#: identity confidence gates them downstream (the risk engine). disrupt_5m comes from the event
+#: feed, not from tracking.
+TRACKING_FEATURES: tuple[str, ...] = (
     "hsr_5m",
     "spr_5m",
     "recovery_10m",
@@ -793,7 +794,7 @@ def _snapshot_from_series(
     reasons = tuple(
         code for code, bad in (("low_coverage", low_cov), ("identity_low", ident_low)) if bad
     )
-    if all(coverage_d[name] < q.min_coverage for name in _TRACKING_FEATURES):
+    if all(coverage_d[name] < q.min_coverage for name in TRACKING_FEATURES):
         quality = Quality.PREMATCH_ONLY
     elif reasons:
         quality = Quality.DEGRADED
@@ -904,7 +905,8 @@ def compute_features_offline(
     ``as_of_t_s`` is on the play clock (module docstring); windows end at
     ``as_of_t_s - cfg.engine.blanking_delta_s`` and no data beyond that cutoff is read.
     ``vmax_mps`` is the player's peak speed from past matches (None: nearmax_cum stays missing).
-    ``z`` is left empty (filled by norms in M4).
+    ``z`` is left empty here; the risk engine (``engine.risk_engine``) fills it and the
+    norm-related quality reasons when it consumes the snapshot.
     """
     as_of_u = float(as_of_t_s)
     known, full, disrupt = _clocks_and_disrupt_upto(events, as_of_u)

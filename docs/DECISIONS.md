@@ -141,3 +141,40 @@ position-norm fallback of a player in reset still carries `reset=True`, so the q
 Consequences: `build_norms` grows one optional parameter; deriving the state from history was
 rejected because a windowed history cannot see the absence or matches outside the frame.
 
+## D-018: Risk engine interface: the caller owns the clocks and the data age (2026-10-22, M7)
+Context: `FeatureSnapshot` times are play-clock seconds (D-016), `RiskSnapshot` times are match
+clock, and `data_age_s` is wall-clock based (docs/04 §4). Someone must bridge the clocks, and
+the engine also needs the announced stoppage for its projection (docs/02 §5).
+Options: the engine keeps its own play/match clock from the event stream; the caller passes both
+clock readings; the caller passes the match clock, the announced stoppage and a per-player data
+age.
+Choice: `update(snapshots, state, data_age_s)` takes a `MatchState` (match clock plus announced
+stoppage, None until announced) and an explicit per-player `data_age_s`. The risk task owns the
+clocks, as it already drives the feature engine; the engine never mixes them. The engine
+resolves z from the raw features via the norm table (the feature engine stays norm-free) and
+returns a `RiskUpdate`: the risk rows plus the consumed snapshots enriched with z and the norm
+quality reasons (`norm_reset`, `few_matches`), so the app's quality chip has its reason
+(docs/06 §2).
+Consequences: replay and live wiring compute the data age where the wall clock exists; the
+engine is deterministic in (snapshots, state, ages); `FeatureSnapshot.z` is filled at the 60 s
+cadence by the engine, not by the feature engine.
+
+## D-019: Engine quality and reason-code rules (2026-10-22, M7)
+Context: docs/02 §3 sets the coverage and identity gates but leaves some edges open: the scope
+of the identity gate, the meaning of `few_matches`, the stale fallback and how the wording
+table's downside code (LOAD_BELOW) is reached.
+Choice: identity confidence gates only the tracking-derived features
+(`stream.TRACKING_FEATURES`); event-feed features (disrupt_5m) do not depend on video identity.
+A stale row (data age above `quality.stale_hide_s`) zeroes every z* and reports quality `stale`,
+so a stale value never looks live. Norm reasons (`norm_reset`, `few_matches`) ride on the
+feature snapshot without changing the quality level; `few_matches` fires when the player's own
+norm carries fewer effective matches than `norms.min_matches_for_own_norm`. The top reason code
+follows docs/06 §5: the largest positive contribution beta_k * z*_k above 0.1 on the log scale
+wins; without one, an elevated time profile of the current band (ln g > 0.1) gives
+TIME_PROFILE, a dominant negative contribution of a load feature (hsr_5m, spr_5m, nearmax_cum)
+gives LOAD_BELOW, else WITHIN_NORMAL; prematch_only and stale rows report DATA_LOST. Posterior
+draws are not bounded by rr_max (the bound guards the headline RR only); reported intervals are
+widened to contain the point estimate, which the RiskSnapshot contract requires.
+Consequences: an identity failure falls back toward the pre-match view for the tracking
+features while the event-feed signal survives; the interval always satisfies the contract.
+
