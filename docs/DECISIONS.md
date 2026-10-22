@@ -178,3 +178,27 @@ widened to contain the point estimate, which the RiskSnapshot contract requires.
 Consequences: an identity failure falls back toward the pre-match view for the tracking
 features while the event-feed signal survives; the interval always satisfies the contract.
 
+
+## D-020: Alert rule semantics left open by the spec table (2026-10-22, M8)
+Context: docs/06 §3 fixes the alert rules but leaves some edges open: which updates count
+toward persistence, whether the R_rest floor and the quality gate apply to a direct Discuss
+opening, what the "2 updates" of the clear rule refer to, how ties break when the budget is
+short, and how the staff flag "concern" reaches the state machine through the existing
+`DecisionRecord` contract (its Action enum has no concern member).
+Options: count every update with RR above threshold toward a streak vs only updates with live
+quality; gate only Check openings vs any opening; a separate clear-persistence knob; arbitrary
+tie-break order; a new Action member for the concern flag.
+Choice: a streak counts consecutive updates with RR at or above the threshold AND quality good
+or degraded (a stale or prematch_only update reports a fallback RR, docs/02 §3, so it cannot be
+evidence and restarts the streak). The R_rest floor and the quality gate apply to any opening,
+Check or Discuss; an upgrade from an open Check is not re-gated (it passed at opening) and
+consumes no budget. The floor gates the opening update, not the streak. The clear rule uses
+`alerts.check.persist_updates` (no separate knob). The budget counts openings per team-match; a
+clearing does not refund a slot. Priority among players qualifying in the same update: higher
+R_rest first, ties broken by player_id ascending (deterministic). The concern flag is a
+`DecisionRecord` with action `other` and the word "concern" in the note on an open Check. In
+`alerts.analysis`, `expected_checks` counts openings at either level (each opening is one card
+and one budget slot) so the Poisson budget approximation uses the same number.
+Consequences: the on-screen behaviour is fully determined by `alerts.*` config values; the
+operating-point chain (docs/02 §7.1) mirrors the state machine exactly, which is what makes the
+10 % replay agreement meaningful.
