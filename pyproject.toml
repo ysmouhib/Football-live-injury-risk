@@ -1,0 +1,84 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "livrisk"
+version = "0.1.0"
+description = "Local decision support: live, player-relative injury risk for football bench staff"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary. All rights reserved." }
+dependencies = [
+  "numpy>=1.26",
+  "scipy>=1.11",
+  "pandas>=2.1",
+  "pyarrow>=14",
+  "pydantic>=2.5",
+  "pyyaml>=6",
+  "scikit-learn>=1.4",
+  "fastapi>=0.110",
+  "uvicorn>=0.27",
+  "duckdb>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+  "hypothesis>=6.90",
+  "ruff>=0.5",
+  "mypy>=1.10",
+  "httpx>=0.27",
+  "pandas-stubs",
+  "types-PyYAML",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+livrisk = ["app/static/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = [
+  "pending: acceptance test for a milestone not yet implemented (excluded from make check)",
+  "milestone_m1: M1 config and contracts",
+  "milestone_m2: M2 synthetic data generator",
+  "milestone_m3: M3 stream feature engine",
+  "milestone_m4: M4 player and team norms",
+  "milestone_m5: M5 pre-match bridge",
+  "milestone_m6: M6 live hazard model fitting",
+  "milestone_m7: M7 online risk engine",
+  "milestone_m8: M8 alert logic",
+  "milestone_m9: M9 replay simulator",
+  "milestone_m10: M10 evaluation harness",
+  "milestone_m11: M11 bench app",
+  "milestone_m12: M12 ingest adapters",
+  "milestone_m13: M13 video identity assignment",
+  "milestone_m14: M14 packaging and operations",
+  "needs_open_data: requires a locally downloaded open dataset; skipped when absent",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "N", "SIM", "RUF"]
+ignore = ["RUF001", "RUF002", "RUF003"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["N802"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+mypy_path = "src"
+packages = ["livrisk"]
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["scipy.*", "sklearn.*", "duckdb.*", "pyarrow.*", "uvicorn.*"]
+ignore_missing_imports = true

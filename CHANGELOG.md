@@ -1,0 +1,12 @@
+# Changelog
+
+## 0.1.0 - 2026-10-22
+
+- Specification (docs 00-07) and design decisions D-001 to D-008.
+- Maths core (`riskmath`), data contracts and user-facing wording, with tests.
+- Typed module skeleton and pending acceptance tests for M1-M14.
+- Markov chain tools (`markov`): ergodicity, stationary law, mixing time, semi-Markov occupancy.
+- Specification of the semi-Markov synthetic speed process, recency-weighted norms with a reset
+  rule, the interval audit, substitution diagnostics, the alert operating point, the multiplicity
+  rule and the training-data policy (D-009 to D-015).
+- Optional p7 interval and quality reasons in the data contracts.

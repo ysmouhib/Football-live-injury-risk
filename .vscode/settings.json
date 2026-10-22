@@ -1,0 +1,15 @@
+{
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestArgs": ["-m", "not pending"],
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true
+  },
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/.mypy_cache": true,
+    "**/.ruff_cache": true,
+    "**/.hypothesis": true
+  }
+}
