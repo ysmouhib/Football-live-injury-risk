@@ -27,6 +27,9 @@
   tracks, with confirmation hysteresis, swap flags and identity confidence (M13).
 - livrisk CLI (replay, fit, evaluate, serve, retention), replay sessions served from the log
   store, the operations runbook and the log retention job (M14).
+- README for bench staff: how to read the screen, how the live path works, a replayed
+  synthetic match moment by moment, the synthetic Gate C results with charts, and the known
+  weaknesses.
 
 ## 0.1.0 - 2026-10-22
 
