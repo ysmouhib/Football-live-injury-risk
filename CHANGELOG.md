@@ -14,6 +14,9 @@
 - Alert state machine with budget and operating-point analysis (M8).
 - Replay simulator with latency, dropout, burst and drift injection, a look-ahead guard on
   feature reads, and an append-only Parquet log store (M9).
+- Evaluation harness and Gate C report: time and club splits, spell-level metrics with
+  player-cluster bootstrap, benchmarks, decision curves, diagnostics, Holm-adjusted
+  exploratory comparators and a model card (M10).
 
 ## 0.1.0 - 2026-10-22
 

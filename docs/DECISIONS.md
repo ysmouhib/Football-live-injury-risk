@@ -240,3 +240,42 @@ place, and a crash must never leave an unreadable file.
 Consequences: replay output equals a direct offline computation on the delivered stream, which
 the M9 tests check. Pacing (`speed`) only adds sleeps. docs/03 §9 shows the part-file layout.
 Losses at the source and at the ingest queue are counted in every replay result.
+
+## D-023: Spell-level scoring and the operational form of the Gate C criteria (2026-10-23, M10)
+Context: docs/05 §2 fixes the criteria but not how spells, flags and intervals are formed, and a
+plain sum of at-risk hazards per spell is biased: a player's rows stop at his injury, so the
+spell holding an injury would get a lower probability because the injury happened.
+Options: score at-risk minutes only; drop spells with any truncation; give the onset spell its
+planned exposure.
+Choice: spells are 15-minute blocks of a player-match counted from each period's start, with
+stoppage minutes as their own spell. A spell's probability sums the observed minutes' hazards
+plus, in a spell that ends with the onset, the rest of the planned spell at the onset minute's
+hazard; exposure that stops at a substitution or a contact injury stays as observed
+(censoring). Criterion 3 flags the top 1.5 / 66 of test spells by the M2 / M1 spell ratio (the
+live layer's relative risk) and tests caught share minus flagged share with a paired player
+cluster bootstrap. The thresholds (O/E 0.8-1.25, subgroups 0.6-1.6, 1.5 alerts) are constants
+in `evaluation/criteria.py`: they are pre-registered, not tunable. `build_design` accepts K = 0
+for the M1 comparator.
+Consequences: O/E and calibration slope are unbiased on correctly specified synthetic data
+(slope 1.00 in the M10 tests). Benchmarks: EWMA acute minus chronic load of F1 and F2
+(5 and 15 min), kNN over spell-mean features (200 neighbours, one pseudo-event of smoothing),
+and one fitted multiplier above a 2 SD limit. Of the exploratory ids, R4 (`ewma_features`) and
+R5 (`team_relative`, needs `team_id`) run on person-minute tables; R1-R3 are reported as not run
+until their inputs exist.
+
+## D-024: Conventions of the Gate C diagnostics (2026-10-23, M10)
+Context: docs/02 §4 and §9 name the diagnostics but leave their exact form open.
+Choice: input attribution enters centred ln(Lambda) as a covariate on top of the offset, so its
+coefficient is the slope minus 1 with prior N(0, input_slope_prior_sd^2); the verdict is
+`input_miscalibrated` when the 95 % slope interval excludes 1 or M1's O/E leaves 0.8-1.25.
+Substitution intensity is fitted on the bands that saw a substitution, without the pre-match
+offset and with weak priors (SD 10). IPCW weights are stabilised by the band-only substitution
+model and truncated at the 99th percentile. The tipping point imputes the minutes after each
+substitution, to the end of regular time, at psi times the fitted hazard of his usual state
+(z = 0, the live state after he left being unknown): one seeded imputation per psi, 90 %
+intervals. Training-data policy: live-mode rows always go through the censoring at the first
+shown alert, even when listed as a training source; rows of unknown sources are excluded and
+counted.
+Consequences: on synthetic data the substitution model recovers the generator's 0.5 log hazard
+ratio on hsr_5m, null effects are erased at psi = 1, and strong effects shrink monotonically
+with psi without always being erased by psi = 5 ("not reached" in the report).

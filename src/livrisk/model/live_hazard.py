@@ -148,10 +148,11 @@ def build_design(
     the per-row offset is ln(weekly_to_match_cumhaz(p7, match_share) / 90). Training rows must
     already be censored per §6: a contact injury or a substitution ends the player's rows, and
     that last row still counts as exposure (y = 0 unless a non-contact injury starts in it).
+    No features (K = 0) gives the time-profile comparator M1 of docs/05_VALIDATION.md §2.
     """
     names = tuple(feature_names)
-    if not 1 <= len(names) <= 6:
-        raise ValueError(f"the main fit uses 1 <= K <= 6 features, got {len(names)}")
+    if len(names) > 6:
+        raise ValueError(f"the main fit uses K <= 6 features, got {len(names)}")
     missing = [c for c in _REQUIRED_COLUMNS if c not in person_minutes.columns]
     missing += [c for c in names if c not in person_minutes.columns]
     if missing:
@@ -485,6 +486,21 @@ def fit_map(
         n_rows=design.n_rows,
         n_events=design.n_events,
     )
+
+
+def predict_hazard(fitted: FittedHazard, design: Design) -> FloatArray:
+    """Per-minute hazard mu = exp(offset + alpha + theta_band + x . beta) of every design row
+    under the fitted point (lambda * Delta of docs/02_MATH.md §4, Delta = 1 min).
+
+    The design must carry the fit's features in the same order. Rows are taken as given: the
+    caller decides which minutes are at risk and must not pass data after the scoring time.
+    """
+    if design.feature_names != fitted.feature_names:
+        raise ValueError(
+            f"design features {design.feature_names} differ from the fit's {fitted.feature_names}"
+        )
+    eta = design.offset + fitted.alpha + fitted.theta[design.band] + design.x @ fitted.beta
+    return np.asarray(np.exp(eta), dtype=np.float64)
 
 
 @dataclass(frozen=True, eq=False)
