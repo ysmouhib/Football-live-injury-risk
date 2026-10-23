@@ -49,8 +49,9 @@ using another card from the budget. The head coach's view shows only the card an
 <img src="img/match/coach.png" alt="Coach view at 37:05: one card, Discuss, #2 Centre back, Short recovery between sprints, no numbers" width="820">
 
 At the top of the same table, #5 Full back (pre-match High) was at ×2.0 with 5.7 % for the rest
-of the match. He met the Check rule from 37:00, but both of the team's cards were already in use,
-so no card opened for him: the first one had gone to #7 Midfielder at 12:00.
+of the match. He met the Check rule from 37:00, but both of the team's cards were already in use
+(the first had gone to #7 Midfielder at 12:00), so instead of a card his row carries a dashed
+marker and the line "Meets the card rule; no card left".
 
 **39:50, old data is greyed.** #10 Winger's newest data was 61 seconds old (one of the injected
 blackouts). His row is greyed and the Data column shows the age.
@@ -69,13 +70,14 @@ he plays all 45 minutes or only 20. For #5 Full back: 2.1 % over 45 minutes, 0.8
 
 **Second-half kick-off, no live data yet.** Fifteen seconds into the second half, nothing from
 the second half had arrived (the data runs 30 seconds behind). Rather than carry first-half
-figures into the second half, the screen hides every figure and says when the data stopped.
+figures into the second half, the screen hides every figure and says when the data stopped,
+while the header clock already follows the second half (45:15).
 
 <img src="img/match/live_stale.png" alt="Screen with a banner Data stale since 49:00; every figure hidden and every row marked Stale" width="820">
 
 **63:00, no card left.** #4 Full back rose to ×3.09 his normal at 63:00 (2.22 % for the rest of
-the match) and stayed at ×2.5 or more until 68:00. Both cards had been used in the first half, so no
-card opened; he stayed at the top of the table.
+the match) and stayed at ×2.5 or more until 68:00. Both cards had been used in the first half, so
+he got the no-card marker at the top of the table.
 
 **After the match.** Both cards with their times and the staff decisions (entered by hand during
 the replay), and each player's highest figure against his normal.
@@ -84,15 +86,14 @@ the replay), and each player's highest figure against his normal.
 
 ## Known issues seen in this replay
 
-- **Cards still cluster in the first half.** Across six replayed matches (seeds 211 to 216), all
-  24 cards opened before half-time, the earliest at 10:00, most on "short recovery between
-  sprints" soon after that figure first becomes available. Before D-029 and D-030 the first card
-  came as early as 3:00, and 8 of the 12 teams had spent both cards by 10:00.
+- **Cards cluster in the first half.** Across six replayed matches (seeds 211 to 216), all 24
+  cards opened before half-time, the earliest at 10:00, most on "short recovery between
+  sprints". Before D-029 and D-030 the first card came as early as 3:00, and 8 of the 12 teams
+  had spent both cards by 10:00. The player-relative scores of that feature point to the cause:
+  in the first half their spread is wider than it should be (standard deviation 1.18 at 10 to 13
+  minutes and 1.21 at 30 to 45 minutes, against 0.93 to 1.00 in the second half) and leans
+  towards short recovery (mean -0.12 to -0.16, against +0.09 to +0.10). The first-half norms of
+  that feature are too tight; rebuilding them is the next fix.
 - **"N× his usual" reads high.** The Why column compares the current value with a typical value
   on a log scale, so it can read high for a player at his normal overall ("High-speed metres
   4.5× his usual" at ×1.0 in the 34:05 screen).
-- **No marker after the budget is used.** Players who qualify once both cards are used should
-  get a subtle marker in the table (docs/06_UI_SPEC.md §3); the alert logic computes it but the
-  screen does not show it yet (#5 Full back at 37:00, #4 Full back at 63:00).
-- **Header clock at the second-half kick-off.** Until the first second-half data arrives, the
-  header clock counts on from the last first-half update ("49:14, first half" above).

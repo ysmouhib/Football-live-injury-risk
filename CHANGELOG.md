@@ -31,6 +31,8 @@
   open an alert card in the first minutes of a player's match (D-029).
 - A card, goal or stoppage, which lifts every player at once, no longer opens alert cards and
   spends the budget; cards open only on a player-specific reason (D-030).
+- Bench app: players who meet the card rule after the budget is spent get a marker instead of
+  a card, and the header clock follows the second half from its kick-off.
 - Short README with the result first, the limitations next and a link to the weekly model;
   the bench guide, a replayed match moment by moment, the synthetic results and what a club
   needs are in docs/BENCH_GUIDE.md, docs/REPLAY_WALKTHROUGH.md, docs/RESULTS.md and

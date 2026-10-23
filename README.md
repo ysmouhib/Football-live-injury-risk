@@ -10,21 +10,25 @@ risk for the coming week; that estimate is this tool's starting point at kick-of
 
 **What is built:** the full match-day pipeline, from tracking ingest and a 10-second feature
 engine to a calibrated live hazard model, budgeted alert cards and a tablet app for the bench.
-It runs offline on one machine, is replayable end to end with injected faults, is covered by 204
+It runs offline on one machine, is replayable end to end with injected faults, is covered by 205
 automated tests, and is judged by an evaluation plan fixed before the results were seen.
 
 **Intended purpose.** Research and decision support for qualified staff. It shows risk; staff
 decide.
 
 <p align="center">
-  <img src="docs/img/bench_illustration.png" alt="Illustration of a club bench at night: staff on the bench, a tablet on a stand showing a live table of players with an alert card, and the pitch beside it" width="820">
+  <img src="docs/img/match/live_check.png" alt="Bench screen during a replayed synthetic match: one row per player, sorted by risk for the rest of the match, with a Check card for #2 Centre back at the bottom" width="820">
+  <br>
+  <sub>The bench screen at 34:05 of a replayed synthetic match: a Check card has just opened for #2 Centre back.</sub>
 </p>
 
 ## The result in one minute
 
-On two held-out synthetic seasons (30,991 fifteen-minute stretches of play, 325 non-contact
-injuries), the riskiest tenth of stretches had an injury rate **14 times** that of the safest
-tenth:
+On synthetic seasons with a known effect planted in the running data, the tool found it: it
+expected 316 injuries against 325 observed, and with 1.5 cards per team per match it put 8.6 %
+of injuries into 2.3 % of playing time (3.8 times chance). All four tests fixed in advance
+passed. The scores come from two held-out seasons: 30,991 fifteen-minute stretches of play and
+325 non-contact injuries.
 
 | Stretches ranked by the tool's risk | Injury rate per 15 minutes | Injuries expected by the tool / observed |
 |---|---|---|
@@ -37,9 +41,9 @@ tenth:
   <img src="docs/img/calibration.png" alt="Bars of expected injuries and dots of observed injuries for ten groups of stretches ordered by predicted risk; the dots follow the bars, rising from 6 to 83" width="760">
 </picture>
 
-With the bench limited to 1.5 alert cards per team per match, the flagged stretches (2.3 % of
-playing time) held 8.6 % of the injuries, 3.8 times their share. All four tests fixed in advance
-passed. Full results: [docs/RESULTS.md](docs/RESULTS.md).
+The spread between the riskiest and safest stretches mostly reflects how much risk variation
+we planted, so read it as a check that the ranking is in the right order and the totals match,
+not as a size to expect on real players. Full results: [docs/RESULTS.md](docs/RESULTS.md).
 
 **Why synthetic.** No public dataset has both live player tracking and the minute of each
 injury; clubs hold that data. So the test uses seasons we generated with a known effect planted
@@ -64,19 +68,16 @@ card asks only for a cheap action.
 - **Spread the cards across the match:** two fixes (D-029, D-030) moved the first card from 3:00
   to 10:00 or later in six replayed matches, and no team now spends both cards by 10:00 (8 of 12
   did before). All 24 cards still came before half-time, mostly on "short recovery between
-  sprints"; that pattern is next.
+  sprints", and the replays show why: that feature's first-half norms are too tight (spread of
+  its player-relative scores 1.18 to 1.21 instead of about 1). Rebuilding them is the next fix.
 - **Align the weekly input:** the weekly model predicts any time-loss injury (its public source
   cannot tell contact from non-contact) while this tool expects non-contact risk; a club's data
   calibrates the conversion.
 - **Connect a live feed:** the tool reads recorded files and replays matches today; a live
-  GPS-vest or stadium feed adapter is the remaining piece. Smaller display issues are listed in
+  GPS-vest or stadium feed adapter is the remaining piece. A smaller display issue is listed in
   the [replay walkthrough](docs/REPLAY_WALKTHROUGH.md#known-issues-seen-in-this-replay).
 
-## What it looks like
-
-<p align="center">
-  <img src="docs/img/match/live_check.png" alt="Bench screen during a replayed synthetic match: one row per player, sorted by risk for the rest of the match, with a Check card for #2 Centre back at the bottom" width="820">
-</p>
+## Reading the screen
 
 One row per player, riskiest first: his pre-match band, how the live data moves his risk against
 his own normal (×1.8 means 1.8 times his usual), his risk for the rest of the match, the main
@@ -106,16 +107,16 @@ Top leagues already put live technology on the bench. In 2023 LaLiga gave every 
 for multi-angle video review, so staff can act faster after an injury
 ([announcement](https://www.laliga.com/en-GB/news/laliga-launches-video-review-system-a-sophisticated-system-that-will-help-the-technical-teams-on-the-bench-to-act-more-effectively-in-the-event-of-injury-in-real-time)),
 and its [Mediacoach](https://newsletter.laliga.es/global-futbol/mediacoach-laliga-technology-minimise-injuries-football)
-service shows live distance and speed for every player. Clubs also use
+service gives staff live physical data for every player. Clubs also use
 [Firstbeat Sports](https://www.firstbeat.com/en/blog/team-heart-rate-monitoring/) for live heart
 rate and [Zone7](https://svexa.com/solutions/zone7-team-sports-injury-risk-and-load-planning/)
-for weekly injury-risk forecasts.
+for daily injury-risk scores and load planning.
 
-Video review helps after something has happened; live tracking shows how much a player has run
-but leaves staff to judge what it means for him; weekly forecasts look days ahead. This project
-joins them: during the match, against each player's own normal, as a risk for the rest of the
-game with its range and data age, with a strict card budget, and tested openly against rules
-fixed in advance.
+What this project adds is the comparison and the discipline around it. Live load is measured
+against each player's own normal for that stage of the match rather than against fixed
+thresholds, turned into a risk for the rest of the game with its range and the age of its data,
+and passed to the bench through a strict card budget tied to agreed actions. The method, the
+code and the pre-registered test results are all open.
 
 ## For developers
 

@@ -37,8 +37,8 @@ Checked 2026-10-23.
   record to the log store. Evidence: `docs/ui/post_match.png` ("Physio checked"); covered by
   an API test.
 - [x] Header shows the budget ("Alerts used: 1 of 2"); qualifying players beyond the budget get
-  a subtle marker, no card. Evidence: header in `docs/ui/live_grey.png`; marker covered by
-  alert-logic tests.
+  a subtle marker, no card. Evidence: header in `docs/ui/live_grey.png`; marker in
+  `docs/img/match/live_discuss.png` (#5 Full back); covered by alert-logic and payload tests.
 
 ## Staleness and quality (docs/06 §4)
 
