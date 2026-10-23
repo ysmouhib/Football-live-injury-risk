@@ -29,7 +29,7 @@ Version 0.1.0: specification complete, core tested.
 | M10 evaluation, Gate C, sensitivity | `livrisk.evaluation` | done |
 | M11 bench app | `livrisk.app` | done |
 | M12 ingest adapters | `livrisk.ingest` | done |
-| M13 video identity | `livrisk.video` | planned |
+| M13 video identity | `livrisk.video` | done |
 | M14 packaging | | planned |
 
 Acceptance tests for planned parts already exist in `tests/` and carry the `pending` marker until
@@ -56,6 +56,7 @@ make check
 7. `docs/06_UI_SPEC.md` - bench screen, alerts, wording rules
 8. `docs/07_RULES_ETHICS.md` - Law 4, GDPR, MDR, AI Act
 9. `docs/DECISIONS.md` - design decisions
+10. `docs/VIDEO_INPUT.md` - external video track format for the identity assigner
 
 ## Data
 

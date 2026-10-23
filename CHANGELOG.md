@@ -23,6 +23,8 @@
 - Ingest adapters: column-mapped CSV/Parquet tracking and official-feed event readers, a
   SkillCorner open-data loader with events reconstructed from the match metadata, and
   clock-drift detection with a degraded flag (M12).
+- Video identity assignment: lineup-constrained Hungarian matching over external per-frame
+  tracks, with confirmation hysteresis, swap flags and identity confidence (M13).
 
 ## 0.1.0 - 2026-10-22
 

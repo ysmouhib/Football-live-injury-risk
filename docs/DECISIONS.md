@@ -313,3 +313,31 @@ at the fixed 2 s tolerance of docs/04 §4 and stays degraded until the next sync
 Consequences: every adapter output validates against the contracts and replays through the M9
 simulator unchanged; feeds with more detail (goals, cards) need an official-feed event table
 alongside the tracking, which `read_events_table` already accepts.
+
+## D-027: Video identity assignment: windowed votes, hysteresis, fail-safe gaps (2026-10-23, M13)
+Context: the video track (docs/01 §4) consumes per-frame tracks from an external pipeline with
+noisy jersey reads (a few percent wrong per frame) and tracker identity swaps at player
+crossings. Downstream, a FeatureSnapshot takes the minimum sample identity confidence over 15
+minutes and gates the tracking features at `quality.min_identity` (D-019), so a single
+low-confidence sample poisons a quarter hour and a one-window guess would be expensive.
+Options: per-window majority vote with immediate switching; one long-memory vote over the whole
+match; per-window Hungarian assignment with confirmation hysteresis and a separate confidence
+memory; a probabilistic multi-hypothesis tracker (heavier, research track).
+Choice: per-window Hungarian assignment (`scipy.optimize.linear_sum_assignment`) of the visible
+tracks to the on-pitch lineup players, with the on-pitch set taken from substitution and
+red-card events at their event time. The cost is `1 -` the window's jersey vote share for the
+player's shirt (0.5 with no reads) plus half the folded distance `d / (d + 5 m)` to the player's
+last seen position. A track's identity changes (or starts being emitted) only after the same
+player wins its assignment for 2 consecutive windows, so a swap flag lands at most
+`window_s * (confirm_windows + 1)` seconds (3 s at the 1 s default) after the physical swap.
+Unconfirmed and contested windows emit nothing: a doubtful stretch is a coverage gap, never a
+guessed identity. `identity_confidence` is the share of the last 30 s of reads supporting the
+emitted identity, shrunk by a prior of 4 reads at 2 % error and cleared on a confirmed switch;
+without any reads it falls back to a continuity score capped at 0.75, below the identity gate,
+so a read outage surfaces as `identity_low`. The tunables are parameters of
+`assign_identities`, documented in docs/VIDEO_INPUT.md, not config keys: the video path is an
+offline post-processing step, not part of the live engine's match-day configuration.
+Consequences: on synthetic tracks with 2 % misreads and injected swaps, every emitted sample
+carries the right identity and swaps are flagged on both tracks within about 2 s. Team guesses
+are hard constraints (a wrong guess leaves the track unassigned rather than misassigned), and
+referees or other non-lineup tracks must be filtered by the adapter before the call.
