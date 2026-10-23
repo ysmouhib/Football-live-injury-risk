@@ -291,3 +291,25 @@ when it is installed and the page falls back to polling the REST snapshot when i
 core engine and the tests never import it.
 Consequences: the dependency list of the core package is unchanged; a bench machine that serves
 the app installs the `serve` extra.
+
+## D-026: Ingest adapter conventions (2026-10-23, M12)
+Context: vendor tracking and event feeds arrive as CSV or Parquet with vendor column names, and
+the SkillCorner open data ships its own layout (match.json plus a tracking JSONL at 10 fps with
+no event stream). The adapters must turn both into the contracts of docs/03 without weakening
+the fail-safe rule of docs/04 §6.
+Options: pass column maps as vendor -> contract or contract -> vendor; coerce out-of-range rows
+silently or reject the file; reconstruct SkillCorner events from the metadata or leave the event
+list empty.
+Choice: column maps are contract field -> vendor column, so an unmapped optional field simply
+keeps its contract default (`detected` True, `identity_confidence` 1.0, wall/ingest stamps
+missing). A file that violates the ranges of docs/03 §2 raises ValueError; nothing is coerced.
+SkillCorner events are reconstructed from match.json: kick-off and period_end from the period
+frame windows, a substitution pairs a non-starter's first tracked frame with the same-team
+leaver whose last tracked frame immediately precedes it (30-frame tolerance), a red card is
+timed at the carded player's last tracked frame when no substitution consumed it, and goals and
+untimed cards are omitted because they cannot be placed on the clock. Position groups come from
+the role acronym, then the group label, then MF. Clock drift is flagged by `ingest.clock.ClockSync`
+at the fixed 2 s tolerance of docs/04 §4 and stays degraded until the next sync.
+Consequences: every adapter output validates against the contracts and replays through the M9
+simulator unchanged; feeds with more detail (goals, cards) need an official-feed event table
+alongside the tracking, which `read_events_table` already accepts.

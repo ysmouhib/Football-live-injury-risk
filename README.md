@@ -28,7 +28,7 @@ Version 0.1.0: specification complete, core tested.
 | M9 replay and log store | `livrisk.replay`, `livrisk.storage` | done |
 | M10 evaluation, Gate C, sensitivity | `livrisk.evaluation` | done |
 | M11 bench app | `livrisk.app` | done |
-| M12 ingest adapters | `livrisk.ingest` | planned |
+| M12 ingest adapters | `livrisk.ingest` | done |
 | M13 video identity | `livrisk.video` | planned |
 | M14 packaging | | planned |
 

@@ -20,6 +20,9 @@
 - Bench app: FastAPI server with WebSocket push and REST decisions, role views, staleness
   enforced server-side, static tablet page with light and dark themes, and a completed UI
   checklist with screenshots from a replayed synthetic match (M11).
+- Ingest adapters: column-mapped CSV/Parquet tracking and official-feed event readers, a
+  SkillCorner open-data loader with events reconstructed from the match metadata, and
+  clock-drift detection with a degraded flag (M12).
 
 ## 0.1.0 - 2026-10-22
 
