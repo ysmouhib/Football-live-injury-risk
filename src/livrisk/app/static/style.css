@@ -74,6 +74,8 @@ tr.row.grey td { color: var(--grey); }
 tr.row.hidden td { color: var(--grey); font-style: italic; }
 tr.row.alert-check td:first-child { border-left: 6px solid var(--check); }
 tr.row.alert-discuss td:first-child { border-left: 6px solid var(--discuss); }
+tr.row.muted td:first-child { border-left: 6px dashed var(--check); }
+.marker { display: block; font-size: 0.8rem; color: var(--muted); }
 
 .chip {
   display: inline-block;

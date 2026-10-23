@@ -125,6 +125,7 @@ UI_TEXT: dict[str, str] = {
     "header_data_age": "Live data {s} s old",
     "header_alerts": "Alerts used: {used} of {budget}",
     "row_age": "{s} s old",
+    "row_muted": "Meets the card rule; no card left",
     "banner_stale": "Data stale since {clock}",
     "monitor_only": "Load against his own norm only; live risk figures are off in this mode.",
     "alert_numbers": "Rest-of-match risk {rest} against {usual} usual.",

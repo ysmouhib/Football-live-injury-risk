@@ -571,6 +571,7 @@ class _Replay:
         open_level = {
             a.player_id: a.level.value for t in self._teams for a in self._alerts[t].open_alerts()
         }
+        muted = {p for t in self._teams for p in self._alerts[t].muted_qualifiers()}
         for snap in snaps:
             row = self._latest_risk.get(snap.player_id)
             if row is None:
@@ -602,6 +603,7 @@ class _Replay:
                     "r_usual": row.r_usual if numbers else None,
                     "reason_code": row.top_reason_code if numbers else None,
                     "alert_level": open_level.get(row.player_id),
+                    "muted": row.player_id in muted,
                 }
             )
 

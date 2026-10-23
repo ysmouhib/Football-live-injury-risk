@@ -100,6 +100,8 @@ class RowInput:
     usual_factor: float | None = None
     alert_level: str | None = None
     quality_reasons: tuple[str, ...] = ()
+    #: Qualifies for a card but the team's budget is spent (docs/06 §3: a marker, no card).
+    muted: bool = False
 
 
 def live_row(row: RowInput, cfg: Config) -> dict[str, Any]:
@@ -134,6 +136,7 @@ def live_row(row: RowInput, cfg: Config) -> dict[str, Any]:
         "data_age_s": round(row.age_s, 1),
         "state": state,
         "alert_level": row.alert_level,
+        "muted": row.muted and row.alert_level is None,
     }
     out["rr_text"] = rr_text(out["rr"])
     out["r_rest_text"] = percent_text(out["r_rest"])
@@ -142,6 +145,7 @@ def live_row(row: RowInput, cfg: Config) -> dict[str, Any]:
     out["interval_text"] = (
         UI_TEXT["blank"] if hidden else f"{percent_text(r.r_rest_lo)} - {percent_text(r.r_rest_hi)}"
     )
+    out["muted_text"] = UI_TEXT["row_muted"] if out["muted"] else ""
     out["age_text"] = UI_TEXT["row_age"].format(s=round(row.age_s)) if state == GREY else ""
     return out
 

@@ -208,6 +208,22 @@ def test_stale_values_hidden_server_side(
     for row in payload["rows"]:
         assert row["data_age_s"] > cfg.quality.stale_hide_s
         assert row["state"] == "hidden" and all(row[f] is None for f in NUMBER_FIELDS)
+    # The header clock follows the second half, not the last first-half update.
+    assert payload["period"] == 2 and payload["clock"] == "45:15"
+
+
+def test_budget_marker_on_rows_without_a_card(replay_bundle: ReplayBundle) -> None:
+    # docs/06 §3: a player who meets the card rule after the budget is spent gets a marker.
+    cfg: Config = replay_bundle.cfg
+    marked = live_row(RowInput(_risk(), "#4 Full back", 10.0, muted=True), cfg)
+    assert marked["muted"] and marked["muted_text"] == wording.UI_TEXT["row_muted"]
+    carded = live_row(RowInput(_risk(), "#4 Full back", 10.0, alert_level="check", muted=True), cfg)
+    plain = live_row(RowInput(_risk(), "#4 Full back", 10.0), cfg)
+    assert not carded["muted"] and not plain["muted"] and plain["muted_text"] == ""
+    shown = replay_bundle.result.displayed
+    assert "muted" in shown.columns and shown["muted"].dtype == bool
+    with_card = shown["alert_level"].notna()
+    assert not bool((shown["muted"] & with_card).any())
 
 
 def test_payloads_from_replay_have_no_forbidden_wording(replay_bundle: ReplayBundle) -> None:

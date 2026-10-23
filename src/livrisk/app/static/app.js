@@ -78,10 +78,14 @@ function renderLive(p) {
   header(p);
   const rows = p.rows.map((r) => {
     const tr = el("tr", {
-      class: "row " + r.state + (r.alert_level ? " alert-" + r.alert_level : ""),
+      class: "row " + r.state + (r.alert_level ? " alert-" + r.alert_level : "") +
+        (r.muted ? " muted" : ""),
       tabindex: "0",
     }, [
-      el("td", { text: r.label }),
+      el("td", {}, [
+        el("span", { text: r.label }),
+        el("span", { class: "marker", text: r.muted_text ? " " + r.muted_text : "" }),
+      ]),
       el("td", {}, [el("span", { class: "chip " + r.prematch_band, text: r.prematch_band_text })]),
       el("td", { class: "num", text: r.rr_text }),
       el("td", { class: "num", text: r.r_rest_text }),

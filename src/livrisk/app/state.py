@@ -228,7 +228,12 @@ class ReplayState:
             return 1, 0.0
         pushed, push = found
         first = push.iloc[0]
-        return int(first["match_period"]), float(first["match_t_s"]) + max(0.0, w - pushed)
+        period = int(first["match_period"])
+        if period == 1 and w >= self._p2_start_s:
+            # The second half has kicked off but no second-half push has arrived yet: the clock
+            # follows the wall clock instead of counting on from the last first-half update.
+            return 2, 2700.0 + (w - self._p2_start_s)
+        return period, float(first["match_t_s"]) + max(0.0, w - pushed)
 
     def _match_t_at(self, wall_s: float) -> float:
         """Match clock at a wall time; the half-time break maps to the end of the first half."""
@@ -262,6 +267,7 @@ class ReplayState:
                     usual_factor=self._usual_factor(risk),
                     alert_level=level.get(risk.player_id),
                     quality_reasons=reasons,
+                    muted=bool(rec.get("muted", False)),
                 )
             )
         period, t_s = self._clock_at(w)
