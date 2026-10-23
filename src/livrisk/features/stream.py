@@ -751,7 +751,13 @@ def _snapshot_from_series(
         "disrupt_5m": 1.0,
     }
 
-    if n:
+    def complete(window_s: float) -> bool:
+        # Warm-up guard (D-029): a window that started before the player's first sample is
+        # only partly observed and biases its feature (recovery reads short, metres read low),
+        # so the feature stays missing until the whole window lies after his first sample.
+        return bool(n) and cut - series.first_u + _EPS_S >= window_s
+
+    if complete(_W5_S):
         lo5 = int(np.searchsorted(g, cut - _W5_S, side="right"))
         if valid_count(lo5) > 0.0:
             features["hsr_5m"] = float(series.cum_hsr[n] - series.cum_hsr[lo5])
@@ -759,7 +765,7 @@ def _snapshot_from_series(
 
     speed_ok = np.where(series.valid, series.speed, np.nan)
 
-    if n and math.isfinite(series.dt):
+    if complete(_W10_S) and math.isfinite(series.dt):
         ctx = f.effort_merge_gap_s + 2.0 * series.dt
         lo10 = int(np.searchsorted(g, cut - _W10_S - ctx, side="left"))
         starts, ends, _, _ = _effort_arrays(
@@ -775,7 +781,7 @@ def _snapshot_from_series(
         if st.size >= 2:
             features["recovery_10m"] = float(np.median(st[1:] - en[:-1]))
 
-    if n:
+    if complete(_W15_S):
         lo15 = int(np.searchsorted(g, cut - _W15_S, side="right"))
         hi_den = int(np.searchsorted(g, series.first_u + _W15_S, side="right"))
         den = float(series.cum_hsr[hi_den])

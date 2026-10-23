@@ -69,6 +69,8 @@ Wireframe (illustrative values):
   When exhausted, further qualifying players are shown with a subtle marker in the table but no
   card. Possible-injury events are outside the budget.
 - Priority when several qualify in the same update: highest R_rest first.
+- No card opens on an update whose top reason is a team-wide event (`DISRUPT`: a card, goal or
+  stoppage lifts every player at once); the figure still shows in the table (D-030).
 - An upgrade Check → Discuss does not consume extra budget.
 - No alerts in `monitor_only` mode except possible-injury (if enabled).
 - Operating point (analyst settings screen, before the match): for the current thresholds, the

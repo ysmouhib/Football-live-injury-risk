@@ -362,3 +362,44 @@ Consequences: serving a replay never re-runs the pipeline; decisions recorded wh
 appended to the same store with the run's config hash. The new config key changes the config
 hash, which only marks runs made after the change. Recorded matches are not a replay source
 yet; `--synthetic` is explicit about that.
+
+## D-029: Windowed features wait for a complete window (2026-10-23)
+Context: replays of six synthetic matches (seeds 211 to 216, ten-match norm history) opened the
+first card of 11 of 12 teams within 10 minutes of kick-off, and 8 of 12 teams had used both
+cards by then, almost all on `recovery_10m`. Coverage was measured against the elapsed part of a
+window, so a 10-minute window two minutes into the match counted as fully covered, and the
+median gap between efforts inside two minutes cannot exceed two minutes: the feature read short
+and the multiplier high. The norms were built from windows ending 5, 10 and 15 minutes into each
+band, so the first band's norm mixed in the same partial windows.
+Options: measure coverage against the full window (every player degraded for the first
+minutes, and features return at 70 % of the window, still biased); scale the feature by the
+observed share (not defined for a median); leave a feature missing until its window is whole.
+Choice: `hsr_5m`, `spr_5m`, `recovery_10m` and `hir_drop_15m` are missing until the whole window
+lies after the player's first sample (5, 10 and 15 minutes on the play clock). A missing feature
+falls back to the usual state (z* = 0), as any missing feature does. `nearmax_cum` and
+`disrupt_5m` are unchanged: they are counts, not windows. The rule applies to substitutes from
+their first sample, and identically to norm history, so band-0 norms no longer contain partial
+windows.
+Consequences: no live multiplier from those features in a player's first 5, 10 and 15 minutes;
+the rows show the reduced quality that any missing feature gives. Online and offline features
+stay identical because both use the same snapshot function.
+The unit test of `recovery_10m` moved its two efforts to 600 s and 631 s so its window is
+complete; the expected 28 s gap is unchanged.
+
+## D-030: Team-wide events do not open alert cards (2026-10-23)
+Context: after D-029, replays of the same six synthetic matches still spent cards early, now on
+`DISRUPT`: a goal, card or stoppage raises `disrupt_5m` for every player on the pitch at once,
+so several players crossed the Check threshold in the same update and the two highest R_rest
+took the team's budget. In 4 of the 6 matches at least one team had used both cards by 7:00 on
+such an event. A card is meant to point at one player; an event that lifts the whole team says
+nothing about which player to watch.
+Options: drop `disrupt_5m` from the model (changes the fitted model and Gate C); open cards on a
+relative risk computed without it (needs a second RR in the contracts); keep the RR as it is but
+let an update whose top reason is a team-wide event open no card.
+Choice: the last. `alerts.logic.TEAM_WIDE_REASONS` (`DISRUPT`) never opens a card. The streaks
+still count those updates, so a player whose own numbers stay high opens a card on his first
+update with a player-specific top reason; an open card can still upgrade and clear as before.
+The table still shows the raised figure with the reason "Just after a card, goal or stoppage".
+Consequences: the model, the risk figures and Gate C are unchanged; only card openings differ.
+The operating-point analysis (docs/02 §7.1) does not model the reason filter, so it now gives
+an upper bound on expected openings.

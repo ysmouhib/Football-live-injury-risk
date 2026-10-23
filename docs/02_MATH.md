@@ -307,6 +307,9 @@ Main candidate live features (K ≤ 6, fixed before Gate C):
 | F5 | `nearmax_cum` | cumulative count of efforts reaching ≥ 0.85 · v_max,i this match | log1p, z vs norm (exposure) |
 | F6 | `disrupt_5m` | count of cards, goals, injury stoppages in last 5 min | standardised by population SD |
 
+F1 to F4 stay missing until their whole window lies after the player's first sample of the
+match (D-029); a missing feature falls back to the usual state.
+
 Secondary (sensitivity analyses only): accelerations 2–4 m/s² count (5 min), team-relative
 variants of F1–F4, late-match HSR after 75′. Hard accelerations > 4 m/s² are excluded.
 

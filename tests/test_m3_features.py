@@ -395,6 +395,31 @@ def test_implausible_speeds_are_missing_and_lower_coverage(config_path: Path) ->
     assert snap.features["spr_5m"] == pytest.approx(3450.0, abs=1e-6)
 
 
+def test_windowed_features_wait_for_a_complete_window(config_path: Path) -> None:
+    # D-029: a window that started before the player's first sample is only partly observed
+    # (recovery between efforts reads short), so the feature stays missing until it is whole.
+    cfg = load_config(config_path)
+    t = np.arange(0.0, 1500.0 + 0.05, 0.1)
+    speed = np.where((t % 10.0) < 3.0, 6.0, 2.0)  # a 3 s high-intensity effort every 10 s
+    empty = _unit_events([])
+    windowed = ("hsr_5m", "spr_5m", "recovery_10m", "hir_drop_15m")
+    expected_from = {"hsr_5m": 300.0, "spr_5m": 300.0, "recovery_10m": 600.0, "hir_drop_15m": 900.0}
+    for start in (0.0, 300.0):  # a starter, and a substitute whose data begins at 300 s
+        keep = t >= start
+        samples = _unit_samples(t[keep], speed[keep])
+        for elapsed in (120.0, 299.0, 300.0, 599.0, 600.0, 899.0, 900.0):
+            cutoff = start + elapsed
+            snap = stream.compute_features_offline(samples, empty, "P1", cutoff + 60.0, 9.0, cfg)
+            for name in windowed:
+                if elapsed >= expected_from[name]:
+                    assert snap.features[name] is not None, (start, elapsed, name)
+                else:
+                    assert snap.features[name] is None, (start, elapsed, name)
+            assert snap.features["nearmax_cum"] is not None
+    snap = stream.compute_features_offline(samples, empty, "P1", 1300.0, 9.0, cfg)
+    assert snap.features["recovery_10m"] == pytest.approx(7.0, abs=0.5)
+
+
 def test_disrupt_5m_counts_window_events_only(config_path: Path) -> None:
     cfg = load_config(config_path)
     t = np.arange(0.0, 720.0 + 0.05, 0.1)
@@ -433,12 +458,13 @@ def test_hir_drop_zero_reference_is_missing(config_path: Path) -> None:
 
 def test_recovery_10m_median_gap_between_efforts(config_path: Path) -> None:
     cfg = load_config(config_path)
-    t = np.arange(0.0, 200.0 + 0.05, 0.1)
+    # The 10-minute window must lie wholly after the first sample (D-029): cutoff 700 s.
+    t = np.arange(0.0, 760.0 + 0.05, 0.1)
     v = np.full(t.size, 3.0)
-    v[(t >= 100.0) & (t < 103.0)] = 6.5
-    v[(t >= 131.0) & (t < 134.0)] = 6.5
+    v[(t >= 600.0) & (t < 603.0)] = 6.5
+    v[(t >= 631.0) & (t < 634.0)] = 6.5
     snap = stream.compute_features_offline(
-        _unit_samples(t, v), _unit_events([]), "P1", 200.0, None, cfg
+        _unit_samples(t, v), _unit_events([]), "P1", 760.0, None, cfg
     )
     # One pair of HIEs 28 s apart (smoothing shifts both edges slightly).
     assert snap.features["recovery_10m"] == pytest.approx(28.0, abs=1.0)

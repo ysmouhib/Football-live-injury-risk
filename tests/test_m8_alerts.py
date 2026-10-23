@@ -370,6 +370,24 @@ def test_tie_on_r_rest_broken_by_player_id() -> None:
         assert logic.muted_qualifiers() == ("P8",)
 
 
+def test_team_wide_reason_never_opens_a_card() -> None:
+    """D-030: updates led by a team-wide event (DISRUPT) open no card and spend no budget, but
+    the streak keeps counting, so the first player-specific update can open at once."""
+    logic = AlertLogic(CFG, MATCH_ID)
+    disrupt = [
+        _snap("P1", 1.8, t).model_copy(update={"top_reason_code": "DISRUPT"})
+        for t in (60.0, 120.0, 180.0)
+    ]
+    for row in disrupt:
+        assert logic.update([row], on_pitch={"P1"}) == []
+    assert logic.budget_used == 0
+    opened = logic.update([_snap("P1", 1.8, 240.0)], on_pitch={"P1"})
+    assert [(a.player_id, a.level, a.reason_code) for a in opened] == [
+        ("P1", AlertLevel.CHECK, "HSR_HIGH")
+    ]
+    assert logic.budget_used == 1
+
+
 def test_direct_discuss_opening_when_floor_blocked_check() -> None:
     """RR >= 2.0 for 3 updates with the floor met only at the third: a Discuss opens directly."""
     scenario = Scenario(

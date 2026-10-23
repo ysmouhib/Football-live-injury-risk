@@ -23,6 +23,10 @@ Rule semantics (D-020):
 - The budget counts openings per team-match; a clearing does not refund a slot. Qualifying
   players denied by the budget are reported by ``muted_qualifiers`` (the table's subtle marker).
 - Priority among players qualifying in the same update: higher R_rest first, then player_id.
+- An opening update must be led by a player-specific reason (D-030): when its top reason is a
+  team-wide event (``TEAM_WIDE_REASONS``: a card, goal or stoppage lifts every player on the
+  pitch at once), no card opens on that update; the streaks still count and an open card can
+  still upgrade.
 """
 
 from __future__ import annotations
@@ -38,6 +42,9 @@ logger = logging.getLogger(__name__)
 
 #: Reason code of an opening row without a dominant feature contribution (docs/06 §5).
 _FALLBACK_REASON = "WITHIN_NORMAL"
+
+#: Reason codes of events that lift every player at once; they never open a card (D-030).
+TEAM_WIDE_REASONS: frozenset[str] = frozenset({"DISRUPT"})
 
 
 @dataclass
@@ -153,6 +160,8 @@ class AlertLogic:
         for row in rows:
             pid = row.player_id
             if pid in self._open or row.r_rest < self._r_rest_floor:
+                continue
+            if row.top_reason_code in TEAM_WIDE_REASONS:
                 continue
             st = self._streaks[pid]
             if st.discuss >= self._persist_discuss:
