@@ -3,10 +3,22 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Bench risk</title>
-  <!-- M11: implement the screens of docs/06_UI_SPEC.md. No external CDN; works offline. -->
+  <title></title>
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-  <main id="app">Bench app placeholder (M11).</main>
+  <header class="bar">
+    <h1 id="title"></h1>
+    <span id="clock" class="clock"></span>
+    <span id="age" class="age"></span>
+    <span id="alerts-used" class="alerts-used"></span>
+    <span id="connection" class="connection" role="status" aria-live="polite"></span>
+  </header>
+  <div id="banner" class="banner" hidden></div>
+  <div id="mode-note" class="mode-note" hidden></div>
+  <main id="screen" aria-live="polite"></main>
+  <section id="detail" class="detail" hidden></section>
+  <section id="cards" class="cards"></section>
+  <script src="/static/app.js"></script>
 </body>
 </html>

@@ -12,7 +12,7 @@ import pytest
 from numpy.typing import NDArray
 
 from livrisk.alerts.logic import AlertLogic
-from livrisk.config import Config, config_hash, load_config
+from livrisk.config import Config, config_hash
 from livrisk.contracts import (
     PERIOD_START_S,
     EventType,
@@ -22,9 +22,9 @@ from livrisk.contracts import (
     RiskSnapshot,
 )
 from livrisk.engine.risk_engine import MatchState, RiskEngine
-from livrisk.features.norms import NormTable, build_norms
+from livrisk.features.norms import NormTable
 from livrisk.features.stream import StreamFeatureEngine, compute_features_offline
-from livrisk.model.live_hazard import FittedHazard, Priors, build_design, fit_map
+from livrisk.model.live_hazard import FittedHazard
 from livrisk.replay.simulator import (
     GREY,
     HIDDEN,
@@ -38,83 +38,40 @@ from livrisk.replay.simulator import (
 from livrisk.storage.logstore import LogStore, records_frame
 from livrisk.synth.generator import (
     SynthMatch,
-    SynthTruth,
-    generate_match,
-    generate_person_minutes,
-    match_tables,
 )
-from tests.conftest import DEFAULT_CONFIG
+from tests.replay_setup import SETTINGS as REPLAY_SETTINGS
+from tests.replay_setup import ReplayBundle
 
 pytestmark = [pytest.mark.milestone_m9]
 
-HISTORY_SEED = 201
-MATCH_SEED = 203
-#: The acceptance scenario of docs/05_VALIDATION.md §3.
-SETTINGS = ReplaySettings(latency_s=30.0, dropout_rate=0.05, burst_s=30.0, seed=1)
+#: The acceptance scenario of docs/05_VALIDATION.md §3, replayed once in ``replay_bundle``.
+SETTINGS = REPLAY_SETTINGS
 #: Half-time break the simulator puts on the wall clock (docs/04: kick-off of period 2).
 HALF_TIME_S = 900.0
 NS = 1_000_000_000
-#: (band, period, band start minute) of the six regular bands.
-REGULAR_BANDS = ((0, 1, 0.0), (1, 1, 15.0), (2, 1, 30.0), (4, 2, 45.0), (5, 2, 60.0), (6, 2, 75.0))
 NUMBERS = ("rr", "p15", "r_rest", "r_rest_lo", "r_rest_hi", "r_usual", "reason_code")
 
 IntArray = NDArray[np.int64]
 
 
-def _norm_history(match: SynthMatch, cfg: Config) -> pd.DataFrame:
-    """Raw feature values of one past match at the ends of three 5-minute windows per band."""
-    events = match_tables(match)["events"]
-    p1_end = float(
-        events.loc[(events["type"] == "period_end") & (events["period"] == 1), "t_s"].iloc[0]
-    )
-    starts = {1: 0.0, 2: p1_end}
-    day = match.lineups[0].kickoff_utc.date()
-    rows: list[tuple[str, object, int, str, float]] = []
-    for pid, frame in match.samples.groupby("player_id"):
-        for band, period, b0 in REGULAR_BANDS:
-            for w in (5.0, 10.0, 15.0):
-                end_u = starts[period] + ((b0 + w) * 60.0 - PERIOD_START_S[period])
-                snap = compute_features_offline(
-                    frame,
-                    events,
-                    str(pid),
-                    end_u + cfg.engine.blanking_delta_s,
-                    match.vmax_mps.get(str(pid)),
-                    cfg,
-                )
-                for feat, value in snap.features.items():
-                    if value is not None and snap.coverage[feat] >= cfg.quality.min_coverage:
-                        rows.append((str(pid), day, band, feat, value))
-    return pd.DataFrame(rows, columns=["player_id", "match_date", "band", "feature", "value"])
+@pytest.fixture(scope="module")
+def cfg(replay_bundle: ReplayBundle) -> Config:
+    return replay_bundle.cfg
 
 
 @pytest.fixture(scope="module")
-def cfg() -> Config:
-    return load_config(DEFAULT_CONFIG)
+def fitted(replay_bundle: ReplayBundle) -> FittedHazard:
+    return replay_bundle.fitted
 
 
 @pytest.fixture(scope="module")
-def fitted(cfg: Config) -> FittedHazard:
-    truth = SynthTruth(p7_mean=0.10)
-    df = generate_person_minutes(3000, seed=3, truth=truth, informative_censoring=False)
-    return fit_map(
-        build_design(df, truth.feature_names, truth.match_share),
-        Priors.from_config(cfg),
-        config_hash=config_hash(cfg),
-        version="replay-test",
-    )
+def match(replay_bundle: ReplayBundle) -> SynthMatch:
+    return replay_bundle.match
 
 
 @pytest.fixture(scope="module")
-def match(cfg: Config) -> SynthMatch:
-    return generate_match(MATCH_SEED, cfg=cfg)
-
-
-@pytest.fixture(scope="module")
-def norms(cfg: Config, match: SynthMatch) -> NormTable:
-    history = _norm_history(generate_match(HISTORY_SEED, cfg=cfg), cfg)
-    positions = {p.player_id: p.position_group for lu in match.lineups for p in lu.players}
-    return build_norms(history, positions, match.lineups[0].kickoff_utc.date(), cfg)
+def norms(replay_bundle: ReplayBundle) -> NormTable:
+    return replay_bundle.norms
 
 
 @dataclass(frozen=True)
@@ -125,22 +82,8 @@ class FullRun:
 
 
 @pytest.fixture(scope="module")
-def full_run(
-    cfg: Config,
-    fitted: FittedHazard,
-    norms: NormTable,
-    match: SynthMatch,
-    tmp_path_factory: pytest.TempPathFactory,
-) -> FullRun:
-    store = LogStore(
-        tmp_path_factory.mktemp("logs"),
-        match.match_id,
-        config_hash=config_hash(cfg),
-        match_date=match.lineups[0].kickoff_utc.date(),
-    )
-    t0 = time.perf_counter()
-    result = replay_match(match, fitted, cfg, SETTINGS, norms=norms, store=store)
-    return FullRun(result, time.perf_counter() - t0, store)
+def full_run(replay_bundle: ReplayBundle) -> FullRun:
+    return FullRun(replay_bundle.result, replay_bundle.elapsed_s, replay_bundle.store)
 
 
 class Mirror:

@@ -17,6 +17,9 @@
 - Evaluation harness and Gate C report: time and club splits, spell-level metrics with
   player-cluster bootstrap, benchmarks, decision curves, diagnostics, Holm-adjusted
   exploratory comparators and a model card (M10).
+- Bench app: FastAPI server with WebSocket push and REST decisions, role views, staleness
+  enforced server-side, static tablet page with light and dark themes, and a completed UI
+  checklist with screenshots from a replayed synthetic match (M11).
 
 ## 0.1.0 - 2026-10-22
 

@@ -279,3 +279,15 @@ counted.
 Consequences: on synthetic data the substitution model recovers the generator's 0.5 log hazard
 ratio on hsr_5m, null effects are erased at psi = 1, and strong effects shrink monotonically
 with psi without always being erased by psi = 5 ("not reached" in the report).
+
+## D-025: The bench app serves WebSockets through an optional dependency (2026-10-23, M11)
+Context: docs/06 §8 specifies a WebSocket push channel for the live table. uvicorn only offers
+the WebSocket protocol when a server-side implementation is installed; the standard library has
+none.
+Options: vendor a minimal WebSocket implementation; make the page poll the REST snapshot;
+add `websockets` as an optional dependency.
+Choice: `websockets` under the `serve` extra in pyproject.toml. The app pushes on `/ws/live`
+when it is installed and the page falls back to polling the REST snapshot when it is not, so the
+core engine and the tests never import it.
+Consequences: the dependency list of the core package is unchanged; a bench machine that serves
+the app installs the `serve` extra.

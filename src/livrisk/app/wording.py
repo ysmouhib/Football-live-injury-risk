@@ -66,6 +66,98 @@ HELP_TEXT: dict[str, str] = {
     ),
 }
 
+#: Reason texts when the "his usual" factor cannot be formed (no usable norm for the value).
+REASON_TEXT_NO_FACTOR: dict[str, str] = {
+    "HSR_HIGH": "High-speed metres above his usual",
+    "SPR_HIGH": "Sprint metres above his usual",
+}
+
+#: Position group -> label used after the shirt number ("#14 Full back").
+POSITION_TEXT: dict[str, str] = {
+    "GK": "Goalkeeper",
+    "CB": "Centre back",
+    "FB": "Full back",
+    "MF": "Midfielder",
+    "W": "Winger",
+    "FW": "Forward",
+}
+
+#: Live feature -> plain name for "his value vs his usual" lines.
+FEATURE_TEXT: dict[str, str] = {
+    "hsr_5m": "High-speed metres, last 5 min",
+    "spr_5m": "Sprint metres, last 5 min",
+    "recovery_10m": "Recovery between efforts",
+    "hir_drop_15m": "Running vs his first 15 min",
+    "nearmax_cum": "Near-top-speed efforts",
+    "disrupt_5m": "Cards, goals, stoppages",
+}
+
+PERIOD_TEXT: dict[int, str] = {
+    1: "first half",
+    2: "second half",
+    3: "extra time, first half",
+    4: "extra time, second half",
+}
+
+#: Screen headings, column titles, buttons and status lines of the bench app.
+UI_TEXT: dict[str, str] = {
+    "title": "Live load and risk",
+    "screen_pre_match": "Pre-match",
+    "screen_live": "Live",
+    "screen_half_time": "Half-time",
+    "screen_post_match": "Post-match",
+    "col_player": "Player",
+    "col_prematch": "Pre-match",
+    "col_now": "Now vs his normal",
+    "col_rest": "Rest of match",
+    "col_why": "Why",
+    "col_data": "Data",
+    "col_usual_90": "Usual risk, 90 min",
+    "col_starting": "Starting",
+    "col_load": "First half vs his usual",
+    "col_second_45": "Second half, 45 min",
+    "col_second_20": "Second half, 20 min",
+    "col_alerts": "Alerts",
+    "col_max_rr": "Highest vs his normal",
+    "col_decision": "Staff decision",
+    "col_level": "Level",
+    "col_time": "Opened - cleared",
+    "header_data_age": "Live data {s} s old",
+    "header_alerts": "Alerts used: {used} of {budget}",
+    "row_age": "{s} s old",
+    "banner_stale": "Data stale since {clock}",
+    "monitor_only": "Load against his own norm only; live risk figures are off in this mode.",
+    "alert_numbers": "Rest-of-match risk {rest} against {usual} usual.",
+    "load_line": "{feature}: {z} SD vs his usual",
+    "rr_up": "×{rr} ▲",
+    "rr_down": "×{rr} ▼",
+    "rr_level": "×{rr}",
+    "percent": "{value} %",
+    "percent_below": "< {value} %",
+    "blank": "-",
+    "detail_p15": "Next 15 min",
+    "detail_usual": "Rest of match, usual",
+    "detail_interval": "Range",
+    "button_ack": "Acknowledge",
+    "button_physio": "Physio checked",
+    "button_discussed": "Discussed",
+    "button_dismiss": "Dismiss",
+    "connection_live": "Connected",
+    "connection_lost": "Connection lost, reconnecting",
+    "starting_yes": "Yes",
+    "starting_no": "Bench",
+    "none_open": "No open alerts",
+    "decision_saved": "Decision saved",
+}
+
+#: Alert-card buttons -> (DecisionRecord action, note).
+DECISION_BUTTONS: dict[str, tuple[str, str]] = {
+    "button_ack": ("none", "acknowledged"),
+    "button_physio": ("physio_check", ""),
+    "button_discussed": ("discussed", ""),
+    "button_dismiss": ("none", "dismissed"),
+}
+
 #: Fixed sentence on every alert card.
 ALERT_DISCLAIMER: str = "Not a prediction of injury; staff decide."
 
@@ -100,12 +192,18 @@ def all_strings() -> list[str]:
     out: list[str] = [ALERT_DISCLAIMER]
     for table in (
         REASON_TEXT,
+        REASON_TEXT_NO_FACTOR,
         ACTION_TEXT,
         LEVEL_TEXT,
         QUALITY_TEXT,
         BAND_TEXT,
         QUALITY_REASON_TEXT,
         HELP_TEXT,
+        POSITION_TEXT,
+        FEATURE_TEXT,
+        PERIOD_TEXT,
+        UI_TEXT,
     ):
         out.extend(table.values())
+    out.extend(note for _, note in DECISION_BUTTONS.values() if note)
     return out

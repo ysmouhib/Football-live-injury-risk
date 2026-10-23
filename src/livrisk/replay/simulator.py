@@ -160,6 +160,8 @@ class ReplayResult:
     ``displayed``: what the screen showed and when (one row per player and push).
     ``delivered`` / ``delivered_events``: the source stream as ingested, with wall and ingest
     times (ns); ``n_lost`` counts samples lost at the source, ``n_queue_dropped`` at the queue.
+    ``enriched``: the z-enriched snapshots of every risk update, with the live match clock.
+    Alert changes and screen rows carry ``shown_wall_ns``, the wall time they reached the screen.
     """
 
     features: pd.DataFrame
@@ -170,6 +172,7 @@ class ReplayResult:
     delivered_events: pd.DataFrame
     n_lost: int
     n_queue_dropped: int
+    enriched: pd.DataFrame
 
 
 class MatchRecord(Protocol):
@@ -205,7 +208,7 @@ def _play_seconds(period: IntArray, t_s: FloatArray, starts: Mapping[int, float]
     return np.asarray(start[period] + (t_s - origin[period]), dtype=np.float64)
 
 
-def _period_layout(match: MatchRecord) -> tuple[dict[int, float], float]:
+def period_layout(match: MatchRecord) -> tuple[dict[int, float], float]:
     """Play second at which each period starts, and the play second at which the match ends.
 
     Lengths come from the period_end events (standard lengths otherwise); without any
@@ -231,7 +234,7 @@ def _period_layout(match: MatchRecord) -> tuple[dict[int, float], float]:
     return starts, float(np.max(u))
 
 
-def _break_before(period: int) -> float:
+def break_before_s(period: int) -> float:
     """Wall-clock seconds of breaks before ``period`` starts."""
     return sum(_BREAK_BEFORE_S[p] for p in range(1, period + 1))
 
@@ -272,7 +275,7 @@ def _source_feed(
     period = s["period"].to_numpy(dtype=np.int64)
     t_s = s["t_s"].to_numpy(dtype=np.float64)
     u = _play_seconds(period, t_s, starts)
-    brk = np.asarray([0.0, *(_break_before(p) for p in (1, 2, 3, 4))])
+    brk = np.asarray([0.0, *(break_before_s(p) for p in (1, 2, 3, 4))])
     wall_ns = kickoff_ns + np.round((u + brk[period]) * _NS).astype(np.int64)
     keep = rng.random(n) >= settings.dropout_rate
     if settings.burst_s > 0.0 and n:
@@ -298,7 +301,7 @@ def _source_feed(
     ev_wall = [
         kickoff_ns
         + round(
-            (starts[e.period] + e.t_s - PERIOD_START_S[e.period] + _break_before(e.period)) * _NS
+            (starts[e.period] + e.t_s - PERIOD_START_S[e.period] + break_before_s(e.period)) * _NS
         )
         for e in match.events
     ]
@@ -446,7 +449,7 @@ class _Replay:
         self._team_of = {p.player_id: team for team, p in players}
         self._teams = sorted({lu.team_id for lu in match.lineups})
         self._kickoff_ns = _epoch_ns(match.lineups[0].kickoff_utc)
-        self._starts, match_end_u = _period_layout(match)
+        self._starts, match_end_u = period_layout(match)
         self._end_u = match_end_u
         if settings.until_s is not None:
             self._end_u = min(self._end_u, float(settings.until_s))
@@ -479,7 +482,7 @@ class _Replay:
         self._n_queue_dropped = 0
         self.feature_rows: list[tuple[FeatureSnapshot, str, int, float]] = []
         self.risk_rows: list[RiskSnapshot] = []
-        self.alert_rows: list[tuple[Alert, str]] = []
+        self.alert_rows: list[tuple[Alert, str, int]] = []
         self.display_rows: list[dict[str, object]] = []
         self.event_rows: list[tuple[MatchEvent, int, int]] = []
         self._flushed = {"tracking": 0, "events": 0, "features": 0, "risk": 0, "alerts": 0}
@@ -488,7 +491,7 @@ class _Replay:
     def _tick_wall_ns(self, u: float) -> int:
         """Wall time of a tick; a tick on a period boundary belongs to the period ending there."""
         period = 1 + bisect.bisect_left(self._boundaries, u - _EPS_S)
-        return self._kickoff_ns + round((u + _break_before(period)) * _NS)
+        return self._kickoff_ns + round((u + break_before_s(period)) * _NS)
 
     def _push_samples(self, hi: int) -> None:
         if hi > self._si:
@@ -528,7 +531,11 @@ class _Replay:
         return out
 
     def _risk_update(
-        self, snaps: list[FeatureSnapshot], state: MatchState, ages: dict[str, float]
+        self,
+        snaps: list[FeatureSnapshot],
+        state: MatchState,
+        ages: dict[str, float],
+        shown_ns: int,
     ) -> None:
         update = self._risk.update(snaps, state, ages)
         self.risk_rows.extend(update.risks)
@@ -548,7 +555,7 @@ class _Replay:
                 else:
                     change = "opened"
                     self._seen_alerts.add(alert.alert_id)
-                self.alert_rows.append((alert, change))
+                self.alert_rows.append((alert, change, shown_ns))
 
     def _push_screen(
         self,
@@ -581,6 +588,7 @@ class _Replay:
                     "shown_wall_ns": now_ns + round(delay * _NS),
                     "match_period": state.period,
                     "match_t_s": state.t_s,
+                    "risk_period": row.period,
                     "risk_as_of_t_s": row.as_of_t_s,
                     "data_age_s": age,
                     "state": shown,
@@ -629,9 +637,10 @@ class _Replay:
         alerts = self.alert_rows[done["alerts"] :]
         store.append(
             "alerts",
-            [a for a, _ in alerts],
-            team_id=[self._team_of.get(a.player_id) for a, _ in alerts],
-            change=[c for _, c in alerts],
+            [a for a, _, _ in alerts],
+            team_id=[self._team_of.get(a.player_id) for a, _, _ in alerts],
+            change=[c for _, c, _ in alerts],
+            shown_wall_ns=[w for _, _, w in alerts],
         )
         done["alerts"] = len(self.alert_rows)
         shown = self.display_rows[self._flushed_display :]
@@ -660,7 +669,7 @@ class _Replay:
             ages = self._ages(snaps, now_ns)
             self.feature_rows.extend((s, "feature_tick", state.period, state.t_s) for s in snaps)
             if k % self._risk_every == 0:
-                self._risk_update(snaps, state, ages)
+                self._risk_update(snaps, state, ages, now_ns + round(settings.push_delay_s * _NS))
             self._push_screen(u, snaps, state, ages, now_ns)
             if u % settings.log_flush_s < self._tick_s - _EPS_S:
                 self._flush()
@@ -673,6 +682,7 @@ class _Replay:
 
     def _result(self) -> ReplayResult:
         ticks = [f for f in self.feature_rows if f[1] == "feature_tick"]
+        enriched = [f for f in self.feature_rows if f[1] == "risk_tick"]
         delivered = self._feed.samples.iloc[: self._si]
         return ReplayResult(
             features=records_frame(
@@ -684,9 +694,10 @@ class _Replay:
                 self.risk_rows, team_id=[self._team_of.get(r.player_id) for r in self.risk_rows]
             ),
             alerts=records_frame(
-                [a for a, _ in self.alert_rows],
-                team_id=[self._team_of.get(a.player_id) for a, _ in self.alert_rows],
-                change=[c for _, c in self.alert_rows],
+                [a for a, _, _ in self.alert_rows],
+                team_id=[self._team_of.get(a.player_id) for a, _, _ in self.alert_rows],
+                change=[c for _, c, _ in self.alert_rows],
+                shown_wall_ns=[w for _, _, w in self.alert_rows],
             ),
             displayed=pd.DataFrame(self.display_rows),
             delivered=delivered.loc[self._delivered[: self._si]].reset_index(drop=True),
@@ -697,6 +708,11 @@ class _Replay:
             ),
             n_lost=self._feed.n_lost,
             n_queue_dropped=self._n_queue_dropped,
+            enriched=records_frame(
+                [f[0] for f in enriched],
+                match_period=[f[2] for f in enriched],
+                match_t_s=[f[3] for f in enriched],
+            ),
         )
 
 

@@ -4,6 +4,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.replay_setup import ReplayBundle, build_bundle
+
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = ROOT / "configs" / "default.yaml"
 
@@ -18,6 +20,12 @@ OPEN_DATA = ROOT / "data" / "open"
 @pytest.fixture
 def config_path() -> Path:
     return DEFAULT_CONFIG
+
+
+@pytest.fixture(scope="session")
+def replay_bundle(tmp_path_factory: pytest.TempPathFactory) -> ReplayBundle:
+    """A full synthetic match replayed once per session (the M9 acceptance scenario)."""
+    return build_bundle(DEFAULT_CONFIG, tmp_path_factory.mktemp("logs"))
 
 
 def skip_without(path: Path) -> pytest.MarkDecorator:

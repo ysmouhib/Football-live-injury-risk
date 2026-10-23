@@ -23,6 +23,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# WebSocket push for the bench app under uvicorn; without it the page polls the REST snapshot.
+serve = ["websockets>=12"]
 dev = [
   "pytest>=8",
   "hypothesis>=6.90",
