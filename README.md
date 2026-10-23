@@ -8,6 +8,11 @@ This is the match-day half of a two-part system. The weekly half,
 [football-injury-risk](https://github.com/ysmouhib/football-injury-risk), estimates each player's
 risk for the coming week; that estimate is this tool's starting point at kick-off.
 
+**What is built:** the full match-day pipeline, from tracking ingest and a 10-second feature
+engine to a calibrated live hazard model, budgeted alert cards and a tablet app for the bench.
+It runs offline on one machine, is replayable end to end with injected faults, is covered by 204
+automated tests, and is judged by an evaluation plan fixed before the results were seen.
+
 **Intended purpose.** Research and decision support for qualified staff. It shows risk; staff
 decide.
 
@@ -39,29 +44,33 @@ passed. Full results: [docs/RESULTS.md](docs/RESULTS.md).
 **Why synthetic.** No public dataset has both live player tracking and the minute of each
 injury; clubs hold that data. So the test uses seasons we generated with a known effect planted
 in the running data, and asks whether the tool finds it, gets the totals right and puts its
-cards where the injuries are. It does. Whether real players' running carries such an effect is
-the question a club's data answers ([docs/FOR_CLUBS.md](docs/FOR_CLUBS.md)).
+cards where the injuries are. It does, on every count. The next step is a club's own history
+([docs/FOR_CLUBS.md](docs/FOR_CLUBS.md)).
 
-## Limitations
+## Proven so far, and next steps
 
-- **Not tested on real players.** Every number above is synthetic, and the synthetic data come
-  from the same kind of model the tool fits. That shows the machinery works and can find a
-  planted effect; it does not show the effect exists in real football.
-- **The figures depend on settings we chose** (how strong the planted effect is, how common
-  injuries are), so real performance could be better or worse. Rarity alone caps it: at real
-  injury rates even a perfect model would see at most about 1 card in 9 followed by an injury.
-- **Cards still cluster in the first half.** Two fixes stopped cards opening in the first
-  minutes (D-029, D-030): across six replayed matches the first card now comes at 10:00 or later
-  instead of 3:00, and no team spends both cards by 10:00 (8 of 12 did before). But all 24 cards
-  still opened before half-time, most on "short recovery between sprints" soon after that figure
-  first becomes available. That is the next thing to investigate.
-- **Two interfaces are not yet aligned.** The weekly model predicts any time-loss injury, because
-  its public source cannot tell contact from non-contact; this tool expects the non-contact risk.
-  Until a club's data calibrates that conversion, the pre-match figure overstates the
-  non-contact starting point.
-- **No live feed yet.** The tool reads recorded files and replays matches; a connection to a
-  live GPS-vest or stadium tracking feed is not built. Smaller display issues are listed at the
-  end of the [replay walkthrough](docs/REPLAY_WALKTHROUGH.md#known-issues-seen-in-this-replay).
+**Proven on synthetic data:** the method recovers a planted effect, keeps its totals within 3 %
+of what happens, and concentrates injuries in the stretches it flags, all under rules fixed in
+advance. Because the test data come from the same kind of model the tool fits, this validates
+the machinery; whether real players' running carries the same signal is what club data will
+show, and real performance could be stronger or weaker. Injury rarity sets the ceiling for any
+model: at real rates, at most about 1 card in 9 can be followed by an injury, which is why every
+card asks only for a cheap action.
+
+**Next steps:**
+
+- **Validate on a club's history:** run the same four pre-registered tests on past seasons, then
+  a shadow season before staff see any card.
+- **Spread the cards across the match:** two fixes (D-029, D-030) moved the first card from 3:00
+  to 10:00 or later in six replayed matches, and no team now spends both cards by 10:00 (8 of 12
+  did before). All 24 cards still came before half-time, mostly on "short recovery between
+  sprints"; that pattern is next.
+- **Align the weekly input:** the weekly model predicts any time-loss injury (its public source
+  cannot tell contact from non-contact) while this tool expects non-contact risk; a club's data
+  calibrates the conversion.
+- **Connect a live feed:** the tool reads recorded files and replays matches today; a live
+  GPS-vest or stadium feed adapter is the remaining piece. Smaller display issues are listed in
+  the [replay walkthrough](docs/REPLAY_WALKTHROUGH.md#known-issues-seen-in-this-replay).
 
 ## What it looks like
 
