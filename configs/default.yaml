@@ -143,6 +143,7 @@ app:
 storage:
   log_dir: logs
   data_dir: data
+  retention_days: 30          # match log partitions older than this are deleted (docs/07)
 
 seeds:
   default: 20261022

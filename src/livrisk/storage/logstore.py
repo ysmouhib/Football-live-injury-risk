@@ -83,6 +83,11 @@ class LogStore:
         """Folder of this match's logs."""
         return self._dir
 
+    @property
+    def config_hash(self) -> str:
+        """The config hash stamped on every row this store writes."""
+        return self._config_hash
+
     def _check_kind(self, kind: str) -> None:
         if kind not in KINDS:
             raise ValueError(f"unknown log kind {kind!r}; expected one of {KINDS}")

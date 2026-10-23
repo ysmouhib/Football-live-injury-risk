@@ -318,6 +318,9 @@ class AppConfig(_Frozen):
 class StorageConfig(_Frozen):
     log_dir: str = Field(description="append-only log store root")
     data_dir: str = Field(description="local data root (never committed)")
+    retention_days: int = Field(
+        gt=0, description="match log partitions older than this are deleted by the retention job"
+    )
 
 
 class SeedsConfig(_Frozen):

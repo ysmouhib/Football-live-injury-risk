@@ -341,3 +341,24 @@ Consequences: on synthetic tracks with 2 % misreads and injected swaps, every em
 carries the right identity and swaps are flagged on both tracks within about 2 s. Team guesses
 are hard constraints (a wrong guess leaves the track unassigned rather than misassigned), and
 referees or other non-lineup tracks must be filtered by the adapter before the call.
+
+## D-028: CLI scope, replay sessions on disk, log retention (2026-10-23, M14)
+Context: packaging needed a command line for replay, fit, evaluate and serve, a way to serve a
+finished replay without re-running the pipeline, and the retention setting docs/07 requires.
+Options: argparse vs a new CLI dependency; serving from the log store alone vs a session
+manifest vs re-running the pipeline on serve; retention as an external cron script vs a library
+function with a config window.
+Choice: `livrisk` is an argparse console script (no new dependency) with replay, fit, evaluate,
+serve and retention subcommands; every random process takes an explicit seed and a command run
+twice with the same arguments produces identical output. `livrisk replay` writes the log store
+plus, at the top level of the match folder, `fitted.json`, `context.json` (lineups, pre-match
+risks, peak speeds, the config hash of the run, the last replayed clock reading) and
+`history.parquet`; `livrisk serve` rebuilds the replay result from the store kinds and the
+match record from the manifest, and rebuilds the norms from the stored history (a session
+without one gets an empty norm table, which only drops the "vs his usual" factor of a reason
+line). Retention is `storage.retention_days` (default 30 days): `storage/retention.py` deletes
+whole date partitions older than the window and nothing outside the log root.
+Consequences: serving a replay never re-runs the pipeline; decisions recorded while serving are
+appended to the same store with the run's config hash. The new config key changes the config
+hash, which only marks runs made after the change. Recorded matches are not a replay source
+yet; `--synthetic` is explicit about that.

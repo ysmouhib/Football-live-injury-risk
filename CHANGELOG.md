@@ -25,6 +25,8 @@
   clock-drift detection with a degraded flag (M12).
 - Video identity assignment: lineup-constrained Hungarian matching over external per-frame
   tracks, with confirmation hysteresis, swap flags and identity confidence (M13).
+- livrisk CLI (replay, fit, evaluate, serve, retention), replay sessions served from the log
+  store, the operations runbook and the log retention job (M14).
 
 ## 0.1.0 - 2026-10-22
 

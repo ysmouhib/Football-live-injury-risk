@@ -30,10 +30,9 @@ Version 0.1.0: specification complete, core tested.
 | M11 bench app | `livrisk.app` | done |
 | M12 ingest adapters | `livrisk.ingest` | done |
 | M13 video identity | `livrisk.video` | done |
-| M14 packaging | | planned |
+| M14 packaging and operations | `livrisk.cli` | done |
 
-Acceptance tests for planned parts already exist in `tests/` and carry the `pending` marker until
-the part is built.
+Acceptance tests for each part live in `tests/`, marked per milestone.
 
 ## Setup
 
@@ -44,6 +43,20 @@ make check
 ```
 
 `make check` runs ruff, the format check, mypy (strict) and the tests that are not pending.
+
+## Usage
+
+```bash
+livrisk replay --synthetic --seed 1    # replay a synthetic match and serve the bench app
+livrisk serve --match-id synth-1       # serve a finished replay from its log store
+livrisk fit --input minutes.parquet --output fitted.json --version v1
+livrisk evaluate --output report.md --card card.md
+livrisk retention                      # delete log partitions older than storage.retention_days
+```
+
+Every command is deterministic for fixed seeds and takes `--config` (default:
+`configs/default.yaml`). See `docs/RUNBOOK.md` for match-day operation, failure handling and
+shadow mode.
 
 ## Documentation
 
@@ -57,6 +70,7 @@ make check
 8. `docs/07_RULES_ETHICS.md` - Law 4, GDPR, MDR, AI Act
 9. `docs/DECISIONS.md` - design decisions
 10. `docs/VIDEO_INPUT.md` - external video track format for the identity assigner
+11. `docs/RUNBOOK.md` - match-day operation, failure handling, shadow mode
 
 ## Data
 
