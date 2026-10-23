@@ -12,6 +12,8 @@
 - Live hazard model: MAP fit with Laplace covariance and importance-sampling interval audit (M6).
 - Online risk engine: posterior-draw intervals, quality rules and monitor-only mode (M7).
 - Alert state machine with budget and operating-point analysis (M8).
+- Replay simulator with latency, dropout, burst and drift injection, a look-ahead guard on
+  feature reads, and an append-only Parquet log store (M9).
 
 ## 0.1.0 - 2026-10-22
 

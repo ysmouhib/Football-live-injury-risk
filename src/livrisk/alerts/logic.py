@@ -54,11 +54,14 @@ class AlertLogic:
 
     Construction fixes the thresholds from ``cfg.alerts`` and the mode from ``cfg.engine.mode``.
     ``update`` is deterministic given its inputs; all times are match-clock seconds (docs/03 §1).
+    Alert ids are ``{id_prefix}A1``, ``{id_prefix}A2``, ... in opening order; a per-team prefix
+    keeps them unique within a match.
     """
 
-    def __init__(self, cfg: Config, match_id: str) -> None:
+    def __init__(self, cfg: Config, match_id: str, *, id_prefix: str = "") -> None:
         alerts = cfg.alerts
         self._match_id = match_id
+        self._id_prefix = id_prefix
         self._mode = Mode(cfg.engine.mode)
         self._rr_check = float(alerts.check.rr_min)
         self._persist_check = int(alerts.check.persist_updates)
@@ -165,7 +168,7 @@ class AlertLogic:
             self._budget_used += 1
             self._n_alerts += 1
             alert = Alert(
-                alert_id=f"A{self._n_alerts}",
+                alert_id=f"{self._id_prefix}A{self._n_alerts}",
                 match_id=self._match_id,
                 player_id=row.player_id,
                 level=level,

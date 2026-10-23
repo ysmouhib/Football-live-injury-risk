@@ -127,6 +127,8 @@ discussed | role_change | substituted | other), note`.
 
 - Raw and derived tables: Parquet, partitioned by `match_id`.
 - Query layer: DuckDB views over Parquet.
-- Log store (append-only): `logs/{date}/{match_id}/` with `tracking.parquet`, `events.parquet`,
-  `features.parquet`, `risk.parquet`, `alerts.parquet`, `decisions.parquet`, `display.parquet`
-  (what was on screen and when). Never rewritten.
+- Log store (append-only, `storage/logstore.py`): `logs/{date}/{match_id}/{kind}/part-NNNNN.parquet`
+  for each kind `tracking`, `events`, `features`, `risk`, `alerts`, `decisions`, `display` (what was
+  on screen and when). Each flush adds one new part file per kind; files are never rewritten.
+  Every row carries the config hash. Mapping fields are stored one column per key
+  (`features.hsr_5m`, `z.hsr_5m`), sequence fields as JSON text (D-022).

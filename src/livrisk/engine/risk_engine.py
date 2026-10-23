@@ -10,8 +10,9 @@ Clocks and the as_of rule
 -------------------------
 ``MatchState`` carries the match clock (``period``, ``t_s``; docs/03 §1); the consumed
 ``FeatureSnapshot`` times are play-clock seconds (breaks removed; docs/DECISIONS.md D-016). The
-risk task owns both clocks and the wall clock, and passes each player's ``data_age_s`` (age of
-the newest used sample, seconds) explicitly, so the engine never mixes the two clocks. A value
+risk task owns both clocks and the wall clock, and passes each player's ``data_age_s`` (wall-clock
+age of the newest sample received, seconds; D-021) explicitly, so the engine never mixes the two
+clocks. A value
 for time ``t`` uses only feature data with timestamps <= ``t - delta``: the feature engine
 enforces the blanking when it builds the snapshots; the risk engine never reads samples.
 
@@ -261,11 +262,11 @@ class RiskEngine:
         """One risk update: one ``RiskSnapshot`` per on-pitch player with a pre-match row.
 
         ``snapshots`` are the latest feature snapshots (play-clock times, D-016); ``state`` is
-        the match clock of this update; ``data_age_s`` carries the age of the newest used sample
-        per player (seconds) and must cover every snapshotted player. Players without a
-        pre-match row or a known position are skipped (a warning is logged once per player);
-        goalkeepers are skipped unless ``engine.include_goalkeepers``. A value for time ``t``
-        uses only data with timestamps <= ``t - delta`` (the feature engine enforces the
+        the match clock of this update; ``data_age_s`` carries the age of the newest received
+        sample per player (seconds, D-021) and must cover every snapshotted player. Players
+        without a pre-match row or a known position are skipped (a warning is logged once per
+        player); goalkeepers are skipped unless ``engine.include_goalkeepers``. A value for time
+        ``t`` uses only data with timestamps <= ``t - delta`` (the feature engine enforces the
         blanking; the risk engine never reads samples). Deterministic given the inputs.
         """
         if state.period not in PERIOD_START_S or state.t_s < PERIOD_START_S[state.period]:

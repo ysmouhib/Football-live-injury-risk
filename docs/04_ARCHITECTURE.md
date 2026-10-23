@@ -60,7 +60,9 @@ Replay mode uses the same tasks with a simulated clock (speed factor configurabl
 - **Match clock** (`period`, `t_s`) comes from `kickoff`/`period_end` events and the source's
   timestamps. All features and risk use the match clock.
 - **Wall clock** measures latency and staleness only: `data_age_s = now_wall − wall_time of the
-  newest sample used`.
+  newest sample received for that player` (before his first sample: time since he came on). The
+  blanking gap δ is part of the design, stated by `cutoff_t_s`, and never counts as age
+  (D-021).
 - Clock sync: each adapter estimates its offset to the match clock from kick-off; drift > 2 s
   raises a `degraded` flag until resynced.
 

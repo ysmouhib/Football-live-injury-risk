@@ -202,3 +202,41 @@ and one budget slot) so the Poisson budget approximation uses the same number.
 Consequences: the on-screen behaviour is fully determined by `alerts.*` config values; the
 operating-point chain (docs/02 §7.1) mirrors the state machine exactly, which is what makes the
 10 % replay agreement meaningful.
+
+## D-021: Data age is the age of the newest sample received (2026-10-23, M9)
+Context: docs/04 §4 defined `data_age_s` from the newest sample used. With the blanking gap
+δ = 60 s the newest used sample is always at least δ old, so every value would sit above the
+60 s grey threshold of docs/06 §4 in normal operation, against the 8 s example of docs/06 §2 and
+§8.
+Options: age of the newest sample used (always ≥ δ); the same minus δ; age of the newest sample
+received.
+Choice: `data_age_s` is the wall-clock age of the newest sample received for the player (its
+production `wall_time_ns`), or the time since he came on before his first sample. The blanking
+gap is a fixed design choice, stated by `cutoff_t_s`, and never counts as age. The screen gets
+the age refreshed at every push (every feature tick) and greys or hides values on it.
+Consequences: in normal operation the age is about the source latency. A feed failure greys
+values 60 s after the last sample and hides them after 180 s, earlier than a used-sample rule
+would. Right after half-time, values stay hidden until second-half data has arrived, because the
+newest data is from before the break. docs/04 §4 updated.
+
+## D-022: Replay on a simulated clock, guard on buffer reads, log store in part files (2026-10-23, M9)
+Context: the replay must drive the live components under latency and dropouts, prove that no
+read crosses t − δ, and write everything to an append-only store, without a second
+implementation of the live path.
+Options: an asyncio replay with a virtual clock; a deterministic tick loop over the same
+components. For the guard: checking only the snapshots that come out; checking every buffer read.
+For the store: one Parquet file per kind kept open; one new file per flush.
+Choice: `replay/simulator.py` runs the live `StreamFeatureEngine`, `RiskEngine` and `AlertLogic`
+in a deterministic tick loop on the play clock. The wall clock is simulated from kick-off with a
+15-minute half-time break; samples and events arrive after a fixed latency, an event before
+samples arriving at the same instant; the match clock given to the risk engine comes only from
+delivered events. `StreamFeatureEngine` takes an optional `read_guard` that the sample buffers
+call before every read, so a leaky feature stage is caught at the buffer, and the snapshots are
+checked as well. `AlertLogic` takes an `id_prefix`; the replay uses the team id, which keeps
+alert ids unique within a match. The log store writes
+`{root}/{date}/{match_id}/{kind}/part-NNNNN.parquet`, one new exclusively created file per kind
+and flush, with flat columns and the config hash on every row: Parquet cannot be appended in
+place, and a crash must never leave an unreadable file.
+Consequences: replay output equals a direct offline computation on the delivered stream, which
+the M9 tests check. Pacing (`speed`) only adds sleeps. docs/03 §9 shows the part-file layout.
+Losses at the source and at the ingest queue are counted in every replay result.

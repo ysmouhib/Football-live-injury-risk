@@ -29,6 +29,7 @@ import bisect
 import math
 from collections.abc import Iterable
 from dataclasses import dataclass
+from typing import Protocol
 
 import numpy as np
 import pandas as pd
@@ -596,16 +597,24 @@ class _GrowVec:
         self._n = int(values.size)
 
 
+class ReadGuard(Protocol):
+    """Checks every buffer read; raises when ``cutoff_u`` (play seconds) is not allowed."""
+
+    def check_read(self, player_id: str, cutoff_u: float) -> None: ...
+
+
 class _SampleBuffer:
     """Append-mostly store of one player's samples with the cached resampled series.
 
     ``prefix(cutoff_u)`` is the only read path: it returns the series built from samples with
     u <= cutoff_u only (play seconds), extending the cache incrementally. The extension is
-    bit-identical to a from-scratch build of the same prefix.
+    bit-identical to a from-scratch build of the same prefix. A ``guard`` sees every read first.
     """
 
-    def __init__(self, cfg: Config) -> None:
+    def __init__(self, cfg: Config, player_id: str = "", guard: ReadGuard | None = None) -> None:
         self._cfg = cfg
+        self._player_id = player_id
+        self._guard = guard
         self._u = _GrowVec()
         self._x = _GrowVec()
         self._y = _GrowVec()
@@ -662,6 +671,8 @@ class _SampleBuffer:
 
     def prefix(self, cutoff_u: float) -> _SeriesData:
         """Resampled series of the prefix u <= cutoff_u (play seconds); never reads beyond."""
+        if self._guard is not None:
+            self._guard.check_read(self._player_id, cutoff_u)
         if not self._sorted:
             self._sort()
         u_all = self._u.view()
@@ -943,10 +954,18 @@ class StreamFeatureEngine:
     Samples and events are pushed in stream order; ``tick(as_of_t_s)`` (play-clock seconds) emits
     one FeatureSnapshot per player currently on the pitch, tracked from samples plus substitution
     and red-card events. Output is identical to ``compute_features_offline`` at the same as_of.
+    A ``read_guard`` (the replay's look-ahead guard) checks every read of the sample buffers.
     """
 
-    def __init__(self, cfg: Config, match_id: str, vmax_by_player: dict[str, float]) -> None:
+    def __init__(
+        self,
+        cfg: Config,
+        match_id: str,
+        vmax_by_player: dict[str, float],
+        read_guard: ReadGuard | None = None,
+    ) -> None:
         self._cfg = cfg
+        self._guard = read_guard
         self._match_id = match_id
         self._vmax = dict(vmax_by_player)
         self._delta = float(cfg.engine.blanking_delta_s)
@@ -965,7 +984,7 @@ class StreamFeatureEngine:
             u = self._clock.to_u(s.period, s.t_s)
             buf = self._buffers.get(s.player_id)
             if buf is None:
-                buf = _SampleBuffer(self._cfg)
+                buf = _SampleBuffer(self._cfg, s.player_id, self._guard)
                 self._buffers[s.player_id] = buf
             buf.add(
                 u,
@@ -1007,7 +1026,7 @@ class StreamFeatureEngine:
         for pid in sorted(self._on_pitch):
             buf = self._buffers.get(pid)
             if buf is None:
-                buf = self._buffers[pid] = _SampleBuffer(self._cfg)
+                buf = self._buffers[pid] = _SampleBuffer(self._cfg, pid, self._guard)
             out.append(
                 _snapshot_from_series(
                     match_id=self._match_id,
