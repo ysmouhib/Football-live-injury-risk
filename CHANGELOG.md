@@ -27,9 +27,14 @@
   tracks, with confirmation hysteresis, swap flags and identity confidence (M13).
 - livrisk CLI (replay, fit, evaluate, serve, retention), replay sessions served from the log
   store, the operations runbook and the log retention job (M14).
-- README for bench staff: how to read the screen, how the live path works, a replayed
-  synthetic match moment by moment, the synthetic Gate C results with charts, and the known
-  weaknesses.
+- Windowed live features wait for a complete window, so a half-started window can no longer
+  open an alert card in the first minutes of a player's match (D-029).
+- A card, goal or stoppage, which lifts every player at once, no longer opens alert cards and
+  spends the budget; cards open only on a player-specific reason (D-030).
+- Short README with the result first, the limitations next and a link to the weekly model;
+  the bench guide, a replayed match moment by moment, the synthetic results and what a club
+  needs are in docs/BENCH_GUIDE.md, docs/REPLAY_WALKTHROUGH.md, docs/RESULTS.md and
+  docs/FOR_CLUBS.md.
 
 ## 0.1.0 - 2026-10-22
 
